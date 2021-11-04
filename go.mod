@@ -11,7 +11,6 @@ require (
 )
 
 require (
-	github.com/Syfaro/telegram-bot-api v4.6.4+incompatible
 	github.com/ahmdrz/goinsta/v2 v2.4.5
 	github.com/go-co-op/gocron v1.9.0
 	github.com/technoweenie/multipartstreamer v1.0.1 // indirect
