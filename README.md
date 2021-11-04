@@ -2,9 +2,15 @@
 #
 # in root folder of the project create "config.json" 
 # with following structure
-# {
-#	"TelegramBotToken": "_your_telegram_bot_token_",
-#   "LogFileName": "_any_name_",
-#	"DbName": "_any_name_"
-#   "UseWebhook": true/false
-# }
+#   {
+#   	"TelegramBotToken": "___",
+#   	"LogFileName": "___",
+#   	"DbName": "___",
+#	    "UseWebhook": false,
+#	    "UpdateStatusPeriod": 10,
+#	    "UpdateNextAccount": 30,
+#   	"IgUsername1": "___",
+#   	"IgPassword1": "___",
+#	    "IgUsername2": "___",
+#	    "IgPassword2": "___"
+#   }
