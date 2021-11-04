@@ -9,7 +9,7 @@ import (
 	"io/ioutil"
 	"log"
 
-	//"net/http"
+	"net/http"
 	"os"
 	"strings"
 	"time"
@@ -89,13 +89,17 @@ func getPrivateStatus(accountName string) (isPrivate bool, err error) {
 }
 
 func saveData(db map[int64]account, config Config) {
-	file, _ := json.MarshalIndent(db, "", " ")
+	file, err := json.MarshalIndent(db, "", " ")
 	ioutil.WriteFile(config.DbName, file, 0644)
+	if err != nil {
+		log.Printf("SAVE DB ERROR %v", err)
+	}
 }
 
 func loadData(config Config) {
 	file, err := ioutil.ReadFile(config.DbName)
 	if err != nil {
+		log.Printf("LOAD DB ERROR %v", err)
 	} else {
 		db = map[int64]account{}
 		json.Unmarshal([]byte(file), &db)
@@ -130,13 +134,13 @@ func task(bot *tgbotapi.BotAPI, db map[int64]account, config Config) {
 	}
 }
 
-//func MainHandler(resp http.ResponseWriter, _ *http.Request) {
-//	resp.Write([]byte("Hi there! I'm InstasnitchBot!<br>You can get me at <a href="https://t.me/instasnitchbot">https://t.me/instasnitchbot</a>"))
-//}
+func MainHandler(resp http.ResponseWriter, _ *http.Request) {
+	resp.Write([]byte("<html><head><title>InstasnitchBot</title></head><body>Hi there! I'm InstasnitchBot!<br>I can do some shit.<br>You can get me at <a href=\"https://t.me/instasnitchbot\">https://t.me/instasnitchbot</a></body></html>"))
+}
 
 func main() {
-	//http.HandleFunc("/", MainHandler)
-	//go http.ListenAndServe(":"+os.Getenv("PORT"), nil)
+	////http.HandleFunc("/", MainHandler)
+	////go http.ListenAndServe(":"+os.Getenv("PORT"), nil)
 
 	// loading config
 	config := getConfig()
