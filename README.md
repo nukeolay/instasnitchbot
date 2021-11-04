@@ -1,4 +1,4 @@
-# instasnitchbot
+# InstasnitchBot
 #
 # in root folder of the project create "config.json" 
 # with following structure
@@ -9,6 +9,7 @@
 #	    "UseWebhook": false,
 #	    "UpdateStatusPeriod": 10,
 #	    "UpdateNextAccount": 30,
+#       "Port": "",
 #   	"IgUsername1": "___",
 #   	"IgPassword1": "___",
 #	    "IgUsername2": "___",

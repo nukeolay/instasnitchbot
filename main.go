@@ -2,8 +2,8 @@ package main
 
 import (
 	"encoding/json"
-	"errors"
 	"fmt"
+	"instasnitchbot/api"
 	"instasnitchbot/assets"
 	"io/ioutil"
 	"log"
@@ -26,6 +26,7 @@ type Config struct {
 	UseWebhook         bool
 	UpdateStatusPeriod int
 	UpdateNextAccount  int
+	Port               string
 	IgUsername1        string
 	IgPassword1        string
 	IgUsername2        string
@@ -46,36 +47,6 @@ func getConfig() Config {
 type account map[string]bool
 
 var db = map[int64]account{}
-
-func getPrivateStatus(insta *goinsta.Instagram, username string) (isPrivate bool, err error) {
-	igUser, err := insta.Profiles.ByName(username)
-	if err != nil {
-		return true, err
-	} else {
-		return igUser.IsPrivate, nil
-	}
-}
-
-func getApi(username string, password string) (insta *goinsta.Instagram, err error) {
-	insta, errLoad := goinsta.Import(".goinsta")
-	if errLoad != nil {
-		log.Printf("INSTA import error: %v", errLoad)
-		insta = goinsta.New(username, password)
-		errLogin := insta.Login()
-		if errLogin != nil {
-			log.Printf("INSTA login error: %v", errLogin)
-			return nil, errors.New("login error")
-		} else {
-			log.Printf("INSTA login success")
-			errExport := insta.Export(".goinsta")
-			if errExport != nil {
-				log.Printf("INSTA export error: %v", errLoad)
-			}
-			return insta, nil
-		}
-	}
-	return insta, nil
-}
 
 func saveData(db map[int64]account, config Config) {
 	file, err := json.MarshalIndent(db, "", " ")
@@ -100,25 +71,25 @@ func task(bot *tgbotapi.BotAPI, insta *goinsta.Instagram, db map[int64]account, 
 	for chatId, storedAccounts := range db {
 		for accountName, oldPrivateStatus := range storedAccounts {
 			log.Printf("CRON updating %s", accountName)
-			newPrivateStatus, err := getPrivateStatus(insta, strings.ToLower(accountName))
+			newPrivateStatus, err := api.GetPrivateStatus(insta, strings.ToLower(accountName))
 			if err != nil { // любая ошибка при проверке статуса
 				log.Printf("CRON ERROR updating %s, %v", accountName, err)
-				insta, err = getApi(config.IgUsername1, config.IgPassword1)
+				insta, err = api.GetApi(config.IgUsername1, config.IgPassword1)
 				if err != nil { // ошибка авторизации
 					log.Printf("CRON ERROR login %s, %v", config.IgUsername1, err)
-					insta, err = getApi(config.IgUsername2, config.IgPassword2)
+					insta, err = api.GetApi(config.IgUsername2, config.IgPassword2)
 					if err != nil { // ошибка авторизации
 						log.Printf("CRON ERROR login %s, %v", config.IgUsername2, err)
 						break
 					} else {
-						newPrivateStatus, err = getPrivateStatus(insta, strings.ToLower(accountName))
+						newPrivateStatus, err = api.GetPrivateStatus(insta, strings.ToLower(accountName))
 						if err != nil { // это ошибка не связанная с логином, возможно поменялось имя акканта, пропустить обновление
 							log.Printf("CRON ERROR updating %s, %v", accountName, err)
 							continue
 						}
 					}
 				} else {
-					newPrivateStatus, err = getPrivateStatus(insta, strings.ToLower(accountName))
+					newPrivateStatus, err = api.GetPrivateStatus(insta, strings.ToLower(accountName))
 					if err != nil { // это ошибка не связанная с логином, возможно поменялось имя акканта, пропустить обновление
 						log.Printf("CRON ERROR updating %s, %v", accountName, err)
 						continue
@@ -148,9 +119,13 @@ func MainHandler(resp http.ResponseWriter, _ *http.Request) {
 }
 
 func main() {
-	////http.HandleFunc("/", MainHandler)
-	////go http.ListenAndServe(":"+os.Getenv("PORT"), nil)
 	config := getConfig()
+	port := config.Port
+	if config.Port == "" {
+		port = os.Getenv("PORT")
+	}
+	http.HandleFunc("/", MainHandler)
+	go http.ListenAndServe(":"+port, nil)
 
 	// setting up log
 	f, err := os.OpenFile(config.LogFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
@@ -161,10 +136,10 @@ func main() {
 	log.SetOutput(f)
 
 	// instagram login
-	insta, err := getApi(config.IgUsername1, config.IgPassword1)
+	insta, err := api.GetApi(config.IgUsername1, config.IgPassword1)
 	if err != nil {
 		log.Printf("INSTA error getApi: %v", err)
-		insta, err = getApi(config.IgUsername2, config.IgPassword2)
+		insta, err = api.GetApi(config.IgUsername2, config.IgPassword2)
 		if err != nil {
 			log.Panic(err)
 		}
@@ -227,6 +202,9 @@ func main() {
 				log.Printf("COMMAND /help %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
 				msg.ParseMode = "HTML"
 				msg.Text = assets.Texts["instructions"]
+			case "SuperGetUserNumber":
+				log.Printf("COMMAND /secret %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
+				msg.Text = fmt.Sprintf("%d", len(db))
 			case "accounts":
 				log.Printf("COMMAND /accounts %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
 				accountsOutput := ""
@@ -277,26 +255,27 @@ func main() {
 				bot.Send(msg)
 				continue
 			}
-			if update.Message.From.IsBot || update.Message.ForwardFrom.IsBot {
-				msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(assets.Texts["do_not_work_with_bots"]))
+
+			if update.Message.From.IsBot {
+				msg := tgbotapi.NewMessage(update.Message.Chat.ID, assets.Texts["do_not_work_with_bots"])
 				bot.Send(msg)
 				continue
 			}
-
-			privateStatus, err := getPrivateStatus(insta, strings.ToLower(update.Message.Text))
+			
+			privateStatus, err := api.GetPrivateStatus(insta, strings.ToLower(update.Message.Text))
 			if err != nil { // любая ошибка при проверке статуса
 				log.Printf("ADD error %s, %v", strings.ToLower(update.Message.Text), err)
-				insta, err = getApi(config.IgUsername1, config.IgPassword1)
+				insta, err = api.GetApi(config.IgUsername1, config.IgPassword1)
 				if err != nil { // ошибка авторизации
 					log.Printf("ADD ERROR login %s, %v", config.IgUsername1, err)
-					insta, err = getApi(config.IgUsername2, config.IgPassword2)
+					insta, err = api.GetApi(config.IgUsername2, config.IgPassword2)
 					if err != nil { // ошибка авторизации
 						log.Printf("ADD ERROR login %s, %v", config.IgUsername2, err)
 						msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(assets.Texts["account_add_error"], err.Error()))
 						bot.Send(msg)
 						continue
 					} else {
-						privateStatus, err = getPrivateStatus(insta, strings.ToLower(update.Message.Text))
+						privateStatus, err = api.GetPrivateStatus(insta, strings.ToLower(update.Message.Text))
 						if err != nil { // это ошибка не связанная с логином, возможно поменялось имя акканта
 							log.Printf("ADD error %s, %v", strings.ToLower(update.Message.Text), err)
 							msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(assets.Texts["account_add_error"], assets.Texts["account_not_found"]))
@@ -305,7 +284,7 @@ func main() {
 						}
 					}
 				} else {
-					privateStatus, err = getPrivateStatus(insta, strings.ToLower(update.Message.Text))
+					privateStatus, err = api.GetPrivateStatus(insta, strings.ToLower(update.Message.Text))
 					if err != nil { // это ошибка не связанная с логином, возможно поменялось имя акканта
 						log.Printf("ADD error %s, %v", strings.ToLower(update.Message.Text), err)
 						msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(assets.Texts["account_add_error"], assets.Texts["account_not_found"]))

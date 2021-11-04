@@ -1,3 +1,5 @@
+github.com/Syfaro/telegram-bot-api v4.6.4+incompatible h1:O30CgxZ/BuHpWfONoGirTIU7XUWhz6NPelk80FxipDI=
+github.com/Syfaro/telegram-bot-api v4.6.4+incompatible/go.mod h1:eC/lEGT3gOB9RowMYsLx0YH1U8a/dEjceHY3M//ej88=
 github.com/ahmdrz/goinsta/v2 v2.4.5 h1:yiNEpTNEx/VWlcCq93miWUx6d2uxdEyklwljsZaiD5I=
 github.com/ahmdrz/goinsta/v2 v2.4.5/go.mod h1:XUEELCWd3hVSqADejqxTa8Uc7Yto9cb6a6HrfkGwVf8=
 github.com/davecgh/go-spew v1.1.0/go.mod h1:J7Y8YcW2NihsgmVo/mv3lAwl/skON4iLHjSsI+c5H38=
