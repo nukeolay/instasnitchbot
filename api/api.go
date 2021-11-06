@@ -33,8 +33,6 @@ func LoadLogins() (igAccounts map[string]string) {
 	}
 }
 
-
-
 func GetSavedApi(igAccounts map[string]string) *goinsta.Instagram {
 	insta, errLoad := goinsta.Import(".goinsta")
 	if errLoad != nil { // если ошибка импорта
@@ -78,21 +76,6 @@ func InstaLogin(igAccounts map[string]string) *goinsta.Instagram {
 	log.Println("LOGIN ERROR all attempts fail")
 	return nil
 }
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 
 
 
