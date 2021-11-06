@@ -7,7 +7,7 @@
 #   	"LogFileName": ".log",
 #   	"DbName": ".db",
 #   	"UseWebhook": false,
-#   	"TryLoginPeriod": 30, // minutes
+#   	"TryLoginPeriod": 5, // number of UpdateStatusPeriod (5*10)
 #   	"UpdateStatusPeriod": 10, // minutes
 #   	"UpdateNextAccount": 30, // seconds
 #   	"SnitchLimit": 3,

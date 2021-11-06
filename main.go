@@ -28,16 +28,16 @@ func taskStatusUpdater(bot *tgbotapi.BotAPI, insta **goinsta.Instagram, db map[i
 		log.Printf("CRON ERROR insta is nil")
 		handlers.SendAdmin(config.AdminChatId, bot, "CRON ERROR insta is nil")
 		// проверяет переменную loginCountdown, если она 0, значит либо еще не запускалась,
-		// либо прошло 5 циклов обновления по 10 минут (как настроить)
+		// либо прошло config.TryLoginPeriod (5) циклов обновления по 10 минут (как настроить)
 		// значит пора обновлять снова
-		if *loginCountdown == 5 {
+		if *loginCountdown == config.TryLoginPeriod {
 			*loginCountdown = 0
 		}
 		if *loginCountdown == 0 {
 			log.Printf("CRON ERROR trying to login")
 			handlers.SendAdmin(config.AdminChatId, bot, "CRON ERROR trying to login")
 			*insta = api.GetNewApi(igAccounts)
-			
+
 		}
 		*loginCountdown++ // в каждом цикле прибавляем 1
 	} else {
@@ -95,7 +95,7 @@ func main() {
 	// instagram login
 	igAccounts := api.LoadLogins()
 	insta := api.GetSavedApi(igAccounts)
-	
+
 	if insta == nil { // не получилось импортировать
 		insta = api.GetNewApi(igAccounts)
 		if insta == nil { // не получилось залигиниться
