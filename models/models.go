@@ -5,6 +5,7 @@ type Config struct {
 	LogFileName        string
 	DbName             string
 	UseWebhook         bool
+	TryLoginPeriod     int
 	UpdateStatusPeriod int
 	UpdateNextAccount  int
 	SnitchLimit        int

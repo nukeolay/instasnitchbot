@@ -3,15 +3,14 @@
 # in root folder of the project create "config.json" 
 # with following structure
 #   {
-#   	"TelegramBotToken": "___",
-#   	"LogFileName": "___",
-#   	"DbName": "___",
-#	    "UseWebhook": false,
-#	    "UpdateStatusPeriod": 10,
-#	    "UpdateNextAccount": 30,
-#       "Port": "",
-#   	"IgUsername1": "___",
-#   	"IgPassword1": "___",
-#	    "IgUsername2": "___",
-#	    "IgPassword2": "___"
+#   	"TelegramBotToken": "_____",
+#   	"LogFileName": ".log",
+#   	"DbName": ".db",
+#   	"UseWebhook": false,
+#   	"TryLoginPeriod": 30, // minutes
+#   	"UpdateStatusPeriod": 10, // minutes
+#   	"UpdateNextAccount": 30, // seconds
+#   	"SnitchLimit": 3,
+#   	"Port": "80",
+#   	"AdminChatId": _____
 #   }
