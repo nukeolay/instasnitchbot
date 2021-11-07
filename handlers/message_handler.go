@@ -87,25 +87,28 @@ func CommandHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]m
 	bot.Send(msg)
 }
 
-func AddNewSnitch(bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]models.Account, config models.Config, insta *goinsta.Instagram) {
+func MessageHandler(workingPath string, bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]models.Account, config models.Config, insta *goinsta.Instagram) {
 	chatId := update.Message.Chat.ID
-	newAccountName := strings.ToLower(update.Message.Text)
+	messageText := update.Message.Text
 
 	////log.Printf("ADD try %s BY %s (ID %d)", newAccountName, update.Message.From.UserName, update.Message.From.ID)
 	if _, ok := db[chatId]; !ok {
 		db[chatId] = make(models.Account)
 	}
 
-	if len(db[chatId]) >= config.SnitchLimit {
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(assets.Texts["limit_of_accounts"], config.SnitchLimit))
-		bot.Send(msg)
-	} else if strings.Contains(newAccountName, " ") {
+	if strings.Contains(messageText, " ") {
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(assets.Texts["account_add_error"], assets.Texts["account_not_found"]))
 		bot.Send(msg)
 	} else if update.Message.From.IsBot {
 		msg := tgbotapi.NewMessage(update.Message.Chat.ID, assets.Texts["do_not_work_with_bots"])
 		bot.Send(msg)
+	} else if strings.Contains(messageText, "://") {
+		api.DownloadMedia(messageText, workingPath, insta, bot, chatId)
+	} else if len(db[chatId]) >= config.SnitchLimit {
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(assets.Texts["limit_of_accounts"], config.SnitchLimit))
+		bot.Send(msg)
 	} else {
+		newAccountName := strings.ToLower(messageText)
 		privateStatus, err := api.GetPrivateStatus(insta, newAccountName)
 		if err == api.UserNotFoundError { // ошибка "account_not_found"
 			log.Printf("ADD error %s, %v", newAccountName, err)

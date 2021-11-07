@@ -7,6 +7,8 @@ import (
 	"instasnitchbot/handlers"
 	"instasnitchbot/models"
 	"instasnitchbot/utils"
+	"path"
+	"runtime"
 
 	"log"
 	"net/http"
@@ -80,6 +82,11 @@ func main() {
 	if config.Port == "" {
 		port = os.Getenv("PORT")
 	}
+	_, filename, _, ok := runtime.Caller(0)
+	if !ok {
+		panic("No caller information")
+	}
+	workingPath := path.Dir(filename)
 
 	http.HandleFunc("/", handlers.WebHandler)
 	go http.ListenAndServe(":"+port, nil)
@@ -151,7 +158,7 @@ func main() {
 			handlers.CommandHandler(bot, update, db)
 			continue
 		} else { // добавляем новый аккаунт
-			handlers.AddNewSnitch(bot, update, db, config, insta)
+			handlers.MessageHandler(workingPath, bot, update, db, config, insta)
 			continue
 		}
 	}
