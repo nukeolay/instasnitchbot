@@ -54,6 +54,8 @@ func DownloadMedia(mediaUrl string, workingDirectory string, insta *goinsta.Inst
 	media, errGetMedia := insta.GetMedia(shortcodeToInstaID(shortCode))
 	if errGetMedia != nil {
 		log.Printf("MEDIA ERROR: %v ", errGetMedia)
+		msg := tgbotapi.NewMessage(chatID, assets.Texts["media_download_error"])
+		bot.Send(msg)
 		return
 	}
 	log.Printf("MEDIA get success: %s ", shortCode)

@@ -43,18 +43,14 @@ func CommandHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]m
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
 	switch update.Message.Command() {
 	case "start":
-		////log.Printf("COMMAND /start %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
 		msg.ParseMode = "HTML"
 		msg.Text = assets.Texts["instructions"]
 	case "help":
-		////log.Printf("COMMAND /help %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
 		msg.ParseMode = "HTML"
 		msg.Text = assets.Texts["instructions"]
 	case "SuperGetUserNumber":
-		////log.Printf("COMMAND /secret %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
 		msg.Text = fmt.Sprintf("%d", len(db))
 	case "accounts":
-		////log.Printf("COMMAND /accounts %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
 		accountsOutput := ""
 		for eachAccount, isPrivate := range db[chatId] {
 			statusEmoji := "🟢 "
@@ -69,7 +65,6 @@ func CommandHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]m
 			msg.Text = accountsOutput
 		}
 	case "del":
-		////log.Printf("COMMAND /del %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
 		deleteAccountsKeyboard := tgbotapi.InlineKeyboardMarkup{}
 		for eachAccount := range db[chatId] {
 			var row []tgbotapi.InlineKeyboardButton
@@ -91,7 +86,6 @@ func MessageHandler(workingPath string, bot *tgbotapi.BotAPI, update tgbotapi.Up
 	chatId := update.Message.Chat.ID
 	messageText := update.Message.Text
 
-	////log.Printf("ADD try %s BY %s (ID %d)", newAccountName, update.Message.From.UserName, update.Message.From.ID)
 	if _, ok := db[chatId]; !ok {
 		db[chatId] = make(models.Account)
 	}
@@ -111,17 +105,21 @@ func MessageHandler(workingPath string, bot *tgbotapi.BotAPI, update tgbotapi.Up
 		newAccountName := strings.ToLower(messageText)
 		privateStatus, err := api.GetPrivateStatus(insta, newAccountName)
 		if err == api.UserNotFoundError { // ошибка "account_not_found"
-			log.Printf("ADD error %s, %v", newAccountName, err)
+			log.Printf("ADD error %s: %v", newAccountName, err)
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(assets.Texts["account_add_error"], assets.Texts["account_not_found"]))
 			bot.Send(msg)
+		} else if _, ok := err.(goinsta.ChallengeError); ok {
+			log.Printf("ADD ERROR challenge: %v", err)
+			
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, assets.Texts["panic"])
+			bot.Send(msg)
 		} else if err != nil { // какая-то другая ошибка
-			log.Printf("ADD ERROR %s, %v", newAccountName, err)
+			log.Printf("ADD ERROR %s: %v", newAccountName, err)
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(assets.Texts["account_add_error"], assets.Texts["account_not_found"]))
 			bot.Send(msg)
 		} else {
 			db[chatId][newAccountName] = privateStatus
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(assets.Texts["account_added"], newAccountName))
-			////log.Printf("ADD success %s BY %s (ID %d)", newAccountName, update.Message.From.UserName, update.Message.From.ID)
 			msg.ParseMode = "HTML"
 			utils.SaveDb(db, config)
 			SendAdmin(config.AdminChatId, bot, fmt.Sprintf("<u>%s</u> added by <u>%s</u> (ID <u>%d</u>)", newAccountName, update.Message.From.UserName, update.Message.From.ID))
