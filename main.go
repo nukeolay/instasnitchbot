@@ -56,7 +56,7 @@ func taskStatusUpdater(bot *tgbotapi.BotAPI, insta **goinsta.Instagram, db map[i
 					} else if _, ok := err.(goinsta.ChallengeError); ok { // TODO разобраться с challenge
 						//TODO отправлять мне в телеграм ошибку
 						log.Printf("CRON ERROR challenge: %v", err)
-					} else if err != nil { // ошибка при проверке статуса кроме "account_not_found"
+					} else if err != nil { // ошибка при проверке статуса кроме "account_not_found" и "challenge"
 						log.Printf("CRON ERROR updating %s: %v", accountName, err)
 					} else {
 						if newPrivateStatus != oldPrivateStatus { // если статус приватности изменился, то отправляем сообщение
@@ -73,7 +73,7 @@ func taskStatusUpdater(bot *tgbotapi.BotAPI, insta **goinsta.Instagram, db map[i
 						}
 						utils.SaveDb(db, config)
 					}
-					time.Sleep(time.Duration(config.UpdateNextAccount * 1000000000)) // проверка следующего аккаунта через _ секунд
+					time.Sleep(time.Duration(utils.GetRandomUpdateNextAccount(config.UpdateNextAccount) * 1000000000)) // проверка следующего аккаунта через _ секунд (получаем случайное число)
 				}
 			}
 		}

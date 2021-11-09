@@ -5,7 +5,9 @@ import (
 	"instasnitchbot/models"
 	"io/ioutil"
 	"log"
+	"math/rand"
 	"os"
+	"time"
 )
 
 func GetConfig() models.Config {
@@ -17,6 +19,13 @@ func GetConfig() models.Config {
 		log.Panic(err)
 	}
 	return configuration
+}
+
+func GetRandomUpdateNextAccount(defaultPeriod int) int {
+	rand.Seed(time.Now().UnixNano())
+	min := 0
+	max := 30
+	return defaultPeriod + rand.Intn(max-min+1) + min
 }
 
 func SaveDb(db map[int64]models.Account, config models.Config) {
