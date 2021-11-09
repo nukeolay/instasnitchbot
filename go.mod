@@ -14,6 +14,7 @@ require (
 )
 
 require (
+	github.com/Davincible/goinsta v0.0.0-20210922223555-172c4b597032
 	github.com/ahmdrz/goinsta/v2 v2.4.5
 	github.com/go-co-op/gocron v1.9.0
 	github.com/tcnksm/go-input v0.0.0-20180404061846-548a7d7a8ee8

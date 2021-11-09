@@ -16,7 +16,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/ahmdrz/goinsta/v2"
+	"github.com/Davincible/goinsta"
 	"github.com/go-co-op/gocron"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
@@ -24,9 +24,9 @@ import (
 
 func taskStatusUpdater(bot *tgbotapi.BotAPI, insta **goinsta.Instagram, db map[int64]models.Account, igAccounts map[string]string, config models.Config, loginCountdown *int, isTaskFinished *bool) {
 	if *isTaskFinished {
+		*isTaskFinished = false
 		time.Sleep(time.Duration(config.UpdateNextAccount * 1000000000)) // пауза перед запуском таска
 		log.Printf("CRON started")
-		*isTaskFinished = false
 		// если крон начал обновлять статусы и увидел, что инста нуль,
 		if *insta == nil {
 			log.Printf("CRON ERROR insta is nil")
@@ -53,7 +53,8 @@ func taskStatusUpdater(bot *tgbotapi.BotAPI, insta **goinsta.Instagram, db map[i
 					newPrivateStatus, err := api.GetPrivateStatus(*insta, strings.ToLower(accountName))
 					if err == api.UserNotFoundError { // ошибка "account_not_found"
 						continue
-					} else if _, ok := err.(goinsta.ChallengeError); ok {
+					} else if _, ok := err.(goinsta.ChallengeError); ok { // TODO разобраться с challenge
+						//TODO отправлять мне в телеграм ошибку
 						log.Printf("CRON ERROR challenge: %v", err)
 					} else if err != nil { // ошибка при проверке статуса кроме "account_not_found"
 						log.Printf("CRON ERROR updating %s: %v", accountName, err)
@@ -83,7 +84,7 @@ func taskStatusUpdater(bot *tgbotapi.BotAPI, insta **goinsta.Instagram, db map[i
 }
 
 func main() {
-	// initialazing
+	// initializing
 	loginCountdown := 0
 	isTaskFinished := true
 	config := utils.GetConfig()
@@ -108,7 +109,8 @@ func main() {
 	defer f.Close()
 	log.SetOutput(f)
 
-	// instagram login
+	log.Print("--------------------------INITIALIZED--------------------------")
+	log.Print("----------------INSTAGRAM LOGIN----------------")
 	igAccounts := api.LoadLogins()
 	insta := api.GetSavedApi(igAccounts)
 
@@ -124,7 +126,7 @@ func main() {
 	if err != nil {
 		log.Panic(err)
 	}
-	log.Println("--------------------------BOT STARTED--------------------------")
+	log.Println("----------------BOT STARTED----------------")
 	bot.Debug = false
 
 	//setting up bot telegram connection
@@ -137,6 +139,7 @@ func main() {
 	db := utils.LoadDb(config)
 
 	//setting up cron update account
+	log.Println("----------------SETTING UP CRON----------------")
 	cronStatusUpdater := gocron.NewScheduler(time.UTC)
 	_, errCronStatusUpdater := cronStatusUpdater.Every(config.UpdateStatusPeriod).Minutes().Do(taskStatusUpdater, bot, &insta, db, igAccounts, config, &loginCountdown, &isTaskFinished)
 	if errCronStatusUpdater != nil {

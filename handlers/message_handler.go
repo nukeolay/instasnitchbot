@@ -10,7 +10,7 @@ import (
 	"net/http"
 	"strings"
 
-	"github.com/ahmdrz/goinsta/v2"
+	"github.com/Davincible/goinsta"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
@@ -105,12 +105,11 @@ func MessageHandler(workingPath string, bot *tgbotapi.BotAPI, update tgbotapi.Up
 		newAccountName := strings.ToLower(messageText)
 		privateStatus, err := api.GetPrivateStatus(insta, newAccountName)
 		if err == api.UserNotFoundError { // ошибка "account_not_found"
-			log.Printf("ADD error %s: %v", newAccountName, err)
+			log.Printf("ADD ERROR account not found %s: %v", newAccountName, err)
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(assets.Texts["account_add_error"], assets.Texts["account_not_found"]))
 			bot.Send(msg)
-		} else if _, ok := err.(goinsta.ChallengeError); ok {
+		} else if _, ok := err.(goinsta.ChallengeError); ok { // TODO разобраться с challenge
 			log.Printf("ADD ERROR challenge: %v", err)
-			
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, assets.Texts["panic"])
 			bot.Send(msg)
 		} else if err != nil { // какая-то другая ошибка
@@ -122,7 +121,7 @@ func MessageHandler(workingPath string, bot *tgbotapi.BotAPI, update tgbotapi.Up
 			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(assets.Texts["account_added"], newAccountName))
 			msg.ParseMode = "HTML"
 			utils.SaveDb(db, config)
-			SendAdmin(config.AdminChatId, bot, fmt.Sprintf("<u>%s</u> added by <u>%s</u> (ID <u>%d</u>)", newAccountName, update.Message.From.UserName, update.Message.From.ID))
+			SendAdmin(config.AdminChatId, bot, fmt.Sprintf("<u>%s (%d)</u> added <u>%s</u>", update.Message.From.UserName, update.Message.From.ID, newAccountName))
 			bot.Send(msg)
 		}
 	}

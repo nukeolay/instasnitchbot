@@ -1,12 +1,14 @@
 package api
 
 import (
+	"fmt"
 	"instasnitchbot/assets"
 	"log"
 	"os"
 	"path"
+	"time"
 
-	"github.com/ahmdrz/goinsta/v2"
+	"github.com/Davincible/goinsta"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
@@ -29,17 +31,19 @@ func shortcodeToInstaID(shortcode string) int64 {
 
 func downloadPhoto(item goinsta.Item, workingDirectory string, bot *tgbotapi.BotAPI, chatID int64) {
 	if item.Videos == nil {
-		imgs, _, errMediaDownload := item.Download(workingDirectory, "")
+		fileName := fmt.Sprintf("instasnitch_%d.jpg", time.Now().UnixNano())
+		fullpath := workingDirectory + "/" + fileName
+		errMediaDownload := item.Download(workingDirectory, fileName)
 		if errMediaDownload != nil {
 			log.Printf("MEDIA ERROR download: %v ", errMediaDownload)
 			msg := tgbotapi.NewMessage(chatID, assets.Texts["media_download_error"])
 			bot.Send(msg)
 		} else {
-			photoToSend := tgbotapi.NewDocumentUpload(chatID, imgs)
+			photoToSend := tgbotapi.NewDocumentUpload(chatID, fullpath)
 			bot.Send(photoToSend)
-			errRemove := os.Remove(imgs)
+			errRemove := os.Remove(fullpath)
 			if errRemove != nil {
-				log.Printf("MEDIA ERROR can't remove %s: %v ", imgs, errRemove)
+				log.Printf("MEDIA ERROR can't remove %s: %v ", fullpath, errRemove)
 			}
 		}
 	} else {
@@ -51,7 +55,13 @@ func downloadPhoto(item goinsta.Item, workingDirectory string, bot *tgbotapi.Bot
 
 func DownloadMedia(mediaUrl string, workingDirectory string, insta *goinsta.Instagram, bot *tgbotapi.BotAPI, chatID int64) {
 	shortCode := path.Base(path.Dir(mediaUrl))
-	media, errGetMedia := insta.GetMedia(shortcodeToInstaID(shortCode))
+	var media *goinsta.FeedMedia
+	var errGetMedia error
+	if len(shortCode) > 12 { //TODO в url сторис media id размещен не там, где у постаб а без "/"
+		media, errGetMedia = insta.GetMedia(shortCode)
+	} else {
+		media, errGetMedia = insta.GetMedia(shortcodeToInstaID(shortCode))
+	}
 	if errGetMedia != nil {
 		log.Printf("MEDIA ERROR: %v ", errGetMedia)
 		msg := tgbotapi.NewMessage(chatID, assets.Texts["media_download_error"])

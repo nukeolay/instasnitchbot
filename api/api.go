@@ -7,22 +7,60 @@ import (
 	"log"
 	"os"
 
-	"github.com/ahmdrz/goinsta/v2"
+	"github.com/Davincible/goinsta"
 	"github.com/tcnksm/go-input"
 )
 
-var LoginRequiredError = goinsta.ErrorN{"login_required", "fail", ""}
-var UserNotFoundError = goinsta.ErrorN{"User not found", "fail", "user_not_found"}
+//var LoginRequiredError = goinsta.ErrorN{"login_required", "fail", ""}
+var UserNotFoundError = goinsta.ErrorN{"User not found", "", "fail", "user_not_found"}
+var TooManyRequestsError = goinsta.ErrorN{"User not found", "", "fail", "user_not_found"}
+
+func getUserFromSearchResult(username string, searchResult *goinsta.SearchResult) (*goinsta.User, error) {
+	for _, igUser := range searchResult.Users {
+		if igUser.Username == username {
+			return igUser, nil
+		}
+	}
+	return nil, UserNotFoundError
+}
 
 func GetPrivateStatus(insta *goinsta.Instagram, username string) (isPrivate bool, err error) {
 	igUser, err := insta.Profiles.ByName(username)
+	// log.Println("/// GetPrivateStatus STARTED")
+	// log.Printf("/// GetPrivateStatus insta.Account.Username: %s", insta.Account.Username)
+	// searchResult, err := insta.Searchbar.SearchUser(username)
+	// log.Println("/// GetPrivateStatus insta.Searchbar.SearchUser finished")
+
+	// if searchResult == nil {
+	// 	log.Printf("searchResult nil, the value is: %v", searchResult)
+	// }
+	// if err != nil {
+	// 	log.Printf("SEARCH USER ERROR: %v", err)
+	// 	CustomChallenge(err, insta)
+	// 	return true, err
+	// } else {
+	// 	igUser, errSearch := getUserFromSearchResult(username, searchResult)
+	// 	if errSearch != nil {
+	// 		return true, errSearch
+	// 	} else {
+	// 		log.Printf("igUser.IsPrivate value is: %v", igUser.IsPrivate)
+	// 		return igUser.IsPrivate, nil
+	// 	}
+	// }
 	if err != nil {
 		log.Printf("GETPRIVATE STATUS ERROR: %v", err)
-		CustomChallenge(err, insta)
-		return true, err
-	} else {
-		return igUser.IsPrivate, nil
+		if typedErr, ok := err.(goinsta.ErrorN); ok {
+			//log.Printf("typedErr.Endpoint:%s\ntypedErr.ErrorType:%s\ntypedErr.Message:%s\ntypedErr.Status:%s\ntypedErr.Error:%s\n", typedErr.Endpoint, typedErr.ErrorType, typedErr.Message, typedErr.Status, typedErr.Error())
+			if typedErr.ErrorType == "user_not_found" {
+				return true, UserNotFoundError
+			} else {
+				return true, typedErr
+			}
+		} else {
+			return true, err
+		}
 	}
+	return igUser.IsPrivate, nil
 }
 
 func LoadLogins() (igAccounts map[string]string) {
