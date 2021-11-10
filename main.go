@@ -27,7 +27,7 @@ func taskStatusUpdater(bot *tgbotapi.BotAPI, insta **goinsta.Instagram, db map[i
 		*isTaskFinished = false
 		time.Sleep(time.Duration(config.UpdateNextAccount * 1000000000)) // пауза перед запуском таска
 		log.Printf("CRON started")
-		// если крон начал обновлять статусы и увидел, что инста нуль,
+		// если крон начал обновлять статусы и дел, что инста нуль,
 		if *insta == nil {
 			log.Printf("CRON ERROR insta is nil")
 			handlers.SendAdmin(config.AdminChatId, bot, "CRON ERROR insta is nil")
@@ -63,9 +63,10 @@ func taskStatusUpdater(bot *tgbotapi.BotAPI, insta **goinsta.Instagram, db map[i
 							msg := tgbotapi.NewMessage(chatId, "")
 							db[chatId][accountName] = newPrivateStatus // записываем в db новый статус
 							if newPrivateStatus {
-								msg.Text = fmt.Sprintf(assets.Texts["account_is_private"], accountName)
+
+								msg.Text = fmt.Sprintf(assets.Texts["ru"]["account_is_private"], accountName)
 							} else {
-								msg.Text = fmt.Sprintf(assets.Texts["account_is_not_private"], accountName)
+								msg.Text = fmt.Sprintf(assets.Texts["ru"]["account_is_not_private"], accountName)
 							}
 							log.Printf("CRON %s status updated", accountName)
 							msg.ParseMode = "HTML"
@@ -156,7 +157,7 @@ func main() {
 			if update.Message == nil { // игнорируем все кроме сообщений
 				continue
 			}
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, assets.Texts["panic"])
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, assets.Texts["ru"]["panic"])
 			bot.Send(msg)
 			continue
 		}

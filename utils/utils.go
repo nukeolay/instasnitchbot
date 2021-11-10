@@ -21,6 +21,17 @@ func GetConfig() models.Config {
 	return configuration
 }
 
+func GetAccountSettings() models.Config {
+	file, _ := os.Open("acSettings.json")
+	decoder := json.NewDecoder(file)
+	configuration := models.Config{}
+	err := decoder.Decode(&configuration)
+	if err != nil {
+		log.Panic(err)
+	}
+	return configuration
+}
+
 func GetRandomUpdateNextAccount(defaultPeriod int) int {
 	rand.Seed(time.Now().UnixNano())
 	min := 0

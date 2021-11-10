@@ -36,7 +36,7 @@ func downloadPhoto(item goinsta.Item, workingDirectory string, bot *tgbotapi.Bot
 		errMediaDownload := item.Download(workingDirectory, fileName)
 		if errMediaDownload != nil {
 			log.Printf("MEDIA ERROR download: %v ", errMediaDownload)
-			msg := tgbotapi.NewMessage(chatID, assets.Texts["media_download_error"])
+			msg := tgbotapi.NewMessage(chatID, assets.Texts["ru"]["media_download_error"])
 			bot.Send(msg)
 		} else {
 			photoToSend := tgbotapi.NewDocumentUpload(chatID, fullpath)
@@ -47,7 +47,7 @@ func downloadPhoto(item goinsta.Item, workingDirectory string, bot *tgbotapi.Bot
 			}
 		}
 	} else {
-		msg := tgbotapi.NewMessage(chatID, assets.Texts["media_not_a_photo"])
+		msg := tgbotapi.NewMessage(chatID, assets.Texts["ru"]["media_not_a_photo"])
 		bot.Send(msg)
 	}
 
@@ -64,7 +64,7 @@ func DownloadMedia(mediaUrl string, workingDirectory string, insta *goinsta.Inst
 	}
 	if errGetMedia != nil {
 		log.Printf("MEDIA ERROR: %v ", errGetMedia)
-		msg := tgbotapi.NewMessage(chatID, assets.Texts["media_download_error"])
+		msg := tgbotapi.NewMessage(chatID, assets.Texts["ru"]["media_download_error"])
 		bot.Send(msg)
 		return
 	}
