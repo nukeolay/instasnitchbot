@@ -13,4 +13,7 @@ type Config struct {
 	AdminChatId        int64
 }
 
-type Account map[string]bool
+type Account struct {
+	Locale     string
+	IgAccounts map[string]bool
+}

@@ -29,14 +29,14 @@ func shortcodeToInstaID(shortcode string) int64 {
 	return id
 }
 
-func downloadPhoto(item goinsta.Item, workingDirectory string, bot *tgbotapi.BotAPI, chatID int64) {
+func downloadPhoto(item goinsta.Item, workingDirectory string, bot *tgbotapi.BotAPI, chatID int64, locale string) {
 	if item.Videos == nil {
 		fileName := fmt.Sprintf("instasnitch_%d.jpg", time.Now().UnixNano())
 		fullpath := workingDirectory + "/" + fileName
 		errMediaDownload := item.Download(workingDirectory, fileName)
 		if errMediaDownload != nil {
 			log.Printf("MEDIA ERROR download: %v ", errMediaDownload)
-			msg := tgbotapi.NewMessage(chatID, assets.Texts["ru"]["media_download_error"])
+			msg := tgbotapi.NewMessage(chatID, assets.Texts[locale]["media_download_error"])
 			bot.Send(msg)
 		} else {
 			photoToSend := tgbotapi.NewDocumentUpload(chatID, fullpath)
@@ -47,13 +47,13 @@ func downloadPhoto(item goinsta.Item, workingDirectory string, bot *tgbotapi.Bot
 			}
 		}
 	} else {
-		msg := tgbotapi.NewMessage(chatID, assets.Texts["ru"]["media_not_a_photo"])
+		msg := tgbotapi.NewMessage(chatID, assets.Texts[locale]["media_not_a_photo"])
 		bot.Send(msg)
 	}
 
 }
 
-func DownloadMedia(mediaUrl string, workingDirectory string, insta *goinsta.Instagram, bot *tgbotapi.BotAPI, chatID int64) {
+func DownloadMedia(mediaUrl string, workingDirectory string, insta *goinsta.Instagram, bot *tgbotapi.BotAPI, chatID int64, locale string) {
 	shortCode := path.Base(path.Dir(mediaUrl))
 	var media *goinsta.FeedMedia
 	var errGetMedia error
@@ -64,7 +64,7 @@ func DownloadMedia(mediaUrl string, workingDirectory string, insta *goinsta.Inst
 	}
 	if errGetMedia != nil {
 		log.Printf("MEDIA ERROR: %v ", errGetMedia)
-		msg := tgbotapi.NewMessage(chatID, assets.Texts["ru"]["media_download_error"])
+		msg := tgbotapi.NewMessage(chatID, assets.Texts[locale]["media_download_error"])
 		bot.Send(msg)
 		return
 	}
@@ -72,10 +72,10 @@ func DownloadMedia(mediaUrl string, workingDirectory string, insta *goinsta.Inst
 	for _, item := range media.Items {
 		if item.CarouselMedia != nil {
 			for _, carItem := range item.CarouselMedia {
-				downloadPhoto(carItem, workingDirectory, bot, chatID)
+				downloadPhoto(carItem, workingDirectory, bot, chatID, locale)
 			}
 		} else {
-			downloadPhoto(item, workingDirectory, bot, chatID)
+			downloadPhoto(item, workingDirectory, bot, chatID, locale)
 		}
 	}
 }

@@ -24,35 +24,66 @@ func SendAdmin(chatId int64, bot *tgbotapi.BotAPI, text string) {
 	bot.Send(msg)
 }
 
-func CallBackHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]models.Account, config models.Config) {
+func CallBackHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]*models.Account, config models.Config) {
 	bot.AnswerCallbackQuery(tgbotapi.NewCallback(update.CallbackQuery.ID, update.CallbackQuery.Data))
 	var chatId int64 = update.CallbackQuery.Message.Chat.ID
-	delete(db[chatId], update.CallbackQuery.Data)
-	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf(assets.Texts["ru"]["account_deleted"], update.CallbackQuery.Data))
+	locale := db[chatId].Locale
+	delete(db[chatId].IgAccounts, update.CallbackQuery.Data)
+	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf(assets.Texts[locale]["account_deleted"], update.CallbackQuery.Data))
 	msg.ParseMode = "HTML"
 	utils.SaveDb(db, config)
 	bot.Send(msg)
-	if len(db[chatId]) == 0 {
-		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, assets.Texts["ru"]["account_list_is_empty_now"])
+	if len(db[chatId].IgAccounts) == 0 {
+		msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, assets.Texts[locale]["account_list_is_empty_now"])
 		bot.Send(msg)
 	}
 }
 
-func CommandHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]models.Account) {
+func CommandHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]*models.Account, config models.Config) {
 	chatId := update.Message.Chat.ID
+	if _, ok := db[chatId]; !ok {
+		db[chatId] = &models.Account{"en", make(map[string]bool)}
+	}
+	locale := db[chatId].Locale
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
 	switch update.Message.Command() {
 	case "start":
-		msg.ParseMode = "HTML"
-		msg.Text = assets.Texts["ru"]["instructions"]
+		var chooseLocaleKeyboard = tgbotapi.NewReplyKeyboard(
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton("🌎 English"),
+			),
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton("🇷🇺 Русский"),
+			),
+		)
+		// выбираем язык для первого сообщения на основании локали пользователя
+		if update.Message.From.LanguageCode == "ru" {
+			msg.Text = assets.Texts["ru"]["choose_language"]
+		} else {
+			msg.Text = assets.Texts["en"]["choose_language"]
+		}
+		msg.ReplyMarkup = chooseLocaleKeyboard
 	case "help":
 		msg.ParseMode = "HTML"
-		msg.Text = assets.Texts["ru"]["instructions"]
-	case "SuperGetUserNumber":
-		msg.Text = fmt.Sprintf("%d", len(db))
+		msg.Text = assets.Texts[locale]["instructions"]
+	case "AdminGetUserNumber":
+		if chatId == config.AdminChatId {
+			msg.Text = fmt.Sprintf("%d", len(db))
+		} else {
+			log.Printf("COMMAND UNKNOWN %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
+			msg.Text = assets.Texts[locale]["unknown_command"]
+		}
+	case "SendBroadcast":
+		if chatId == config.AdminChatId {
+			//TODO цикл в котором перебирать всех пользователей и отправлять сообщения (возможно асинхронно, через go)
+			//TODO отдельная функция BroadCast(db, message), из doc CommandArguments
+		} else {
+			log.Printf("COMMAND UNKNOWN %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
+			msg.Text = assets.Texts[locale]["unknown_command"]
+		}
 	case "accounts":
 		accountsOutput := ""
-		for eachAccount, isPrivate := range db[chatId] {
+		for eachAccount, isPrivate := range db[chatId].IgAccounts {
 			statusEmoji := "🟢 "
 			if isPrivate {
 				statusEmoji = "🔴 "
@@ -60,65 +91,89 @@ func CommandHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]m
 			accountsOutput = accountsOutput + statusEmoji + " " + eachAccount + "\n\n"
 		}
 		if accountsOutput == "" {
-			msg.Text = assets.Texts["ru"]["account_list_is_empty"]
+			msg.Text = assets.Texts[locale]["account_list_is_empty"]
 		} else {
 			msg.Text = accountsOutput
 		}
 	case "del":
 		deleteAccountsKeyboard := tgbotapi.InlineKeyboardMarkup{}
-		for eachAccount := range db[chatId] {
+		for eachAccount := range db[chatId].IgAccounts {
 			var row []tgbotapi.InlineKeyboardButton
 			button := tgbotapi.NewInlineKeyboardButtonData(eachAccount, eachAccount)
 			row = append(row, button)
 			deleteAccountsKeyboard.InlineKeyboard = append(deleteAccountsKeyboard.InlineKeyboard, row)
 		}
-
-		msg.Text = assets.Texts["ru"]["account_choose_to_delete"]
+		msg.Text = assets.Texts[locale]["account_choose_to_delete"]
 		msg.ReplyMarkup = deleteAccountsKeyboard
 	default:
 		log.Printf("COMMAND UNKNOWN %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
-		msg.Text = assets.Texts["ru"]["unknown_command"]
+		msg.Text = assets.Texts[locale]["unknown_command"]
 	}
 	bot.Send(msg)
 }
 
-func MessageHandler(workingPath string, bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]models.Account, config models.Config, insta *goinsta.Instagram) {
+func MessageHandler(workingPath string, bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]*models.Account, config models.Config, insta *goinsta.Instagram) {
 	chatId := update.Message.Chat.ID
 	messageText := update.Message.Text
-
 	if _, ok := db[chatId]; !ok {
-		db[chatId] = make(models.Account)
+		db[chatId] = &models.Account{"en", make(map[string]bool)}
 	}
-
-	if strings.Contains(messageText, " ") {
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(assets.Texts["ru"]["account_add_error"], assets.Texts["ru"]["account_not_found"]))
+	locale := db[chatId].Locale
+	if update.Message.From.IsBot {
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, assets.Texts[locale]["do_not_work_with_bots"])
 		bot.Send(msg)
-	} else if update.Message.From.IsBot {
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, assets.Texts["ru"]["do_not_work_with_bots"])
+	} else if messageText == "🌎 English" || messageText == "🇷🇺 Русский" {
+		if messageText == "🇷🇺 Русский" {
+			locale = "ru"
+		} else {
+			locale = "en"
+		}
+		db[chatId].Locale = locale
+		utils.SaveDb(db, config)
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
+		msg.ReplyMarkup = tgbotapi.ReplyKeyboardHide{HideKeyboard: true}
+
+		var standardMenuKeyboard = tgbotapi.NewReplyKeyboard(
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton(assets.Texts[locale]["button_accounts"]),
+			),
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton(assets.Texts[locale]["button_delete"]),
+			),
+			tgbotapi.NewKeyboardButtonRow(
+				tgbotapi.NewKeyboardButton(assets.Texts[locale]["button_help"]),
+			),
+		)
+		msg.ReplyMarkup = standardMenuKeyboard
+		msg.ParseMode = "HTML"
+		msg.Text = assets.Texts[locale]["instructions"]
+		bot.Send(msg)
+	} else if strings.Contains(messageText, " ") {
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(assets.Texts[locale]["account_add_error"], assets.Texts[locale]["account_not_found"]))
 		bot.Send(msg)
 	} else if strings.Contains(messageText, "://") {
-		api.DownloadMedia(messageText, workingPath, insta, bot, chatId)
-	} else if len(db[chatId]) >= config.SnitchLimit {
-		msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(assets.Texts["ru"]["limit_of_accounts"], config.SnitchLimit))
+		api.DownloadMedia(messageText, workingPath, insta, bot, chatId, locale)
+	} else if len(db[chatId].IgAccounts) >= config.SnitchLimit {
+		msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(assets.Texts[locale]["limit_of_accounts"], config.SnitchLimit))
 		bot.Send(msg)
 	} else {
 		newAccountName := strings.ToLower(messageText)
 		privateStatus, err := api.GetPrivateStatus(insta, newAccountName)
 		if err == api.UserNotFoundError { // ошибка "account_not_found"
 			log.Printf("ADD ERROR account not found %s: %v", newAccountName, err)
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(assets.Texts["ru"]["account_add_error"], assets.Texts["ru"]["account_not_found"]))
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(assets.Texts[locale]["account_add_error"], assets.Texts[locale]["account_not_found"]))
 			bot.Send(msg)
 		} else if _, ok := err.(goinsta.ChallengeError); ok { // TODO разобраться с challenge
 			log.Printf("ADD ERROR challenge: %v", err)
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, assets.Texts["ru"]["panic"])
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, assets.Texts[locale]["panic"])
 			bot.Send(msg)
 		} else if err != nil { // какая-то другая ошибка
 			log.Printf("ADD ERROR %s: %v", newAccountName, err)
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(assets.Texts["ru"]["account_add_error"], assets.Texts["ru"]["account_not_found"]))
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(assets.Texts[locale]["account_add_error"], assets.Texts[locale]["account_not_found"]))
 			bot.Send(msg)
 		} else {
-			db[chatId][newAccountName] = privateStatus
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(assets.Texts["ru"]["account_added"], newAccountName))
+			db[chatId].IgAccounts[newAccountName] = privateStatus
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, fmt.Sprintf(assets.Texts[locale]["account_added"], newAccountName))
 			msg.ParseMode = "HTML"
 			utils.SaveDb(db, config)
 			SendAdmin(config.AdminChatId, bot, fmt.Sprintf("<u>%s (%d)</u> added <u>%s</u>", update.Message.From.UserName, update.Message.From.ID, newAccountName))

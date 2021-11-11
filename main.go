@@ -22,7 +22,7 @@ import (
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
 )
 
-func taskStatusUpdater(bot *tgbotapi.BotAPI, insta **goinsta.Instagram, db map[int64]models.Account, igAccounts map[string]string, config models.Config, loginCountdown *int, isTaskFinished *bool) {
+func taskStatusUpdater(bot *tgbotapi.BotAPI, insta **goinsta.Instagram, db map[int64]*models.Account, igAccounts map[string]string, config models.Config, loginCountdown *int, isTaskFinished *bool) {
 	if *isTaskFinished {
 		*isTaskFinished = false
 		time.Sleep(time.Duration(config.UpdateNextAccount * 1000000000)) // пауза перед запуском таска
@@ -48,7 +48,8 @@ func taskStatusUpdater(bot *tgbotapi.BotAPI, insta **goinsta.Instagram, db map[i
 			// если инста не нуль, то сбрасываем счетчик loginCountdown на 0
 			*loginCountdown = 0
 			for chatId, storedAccounts := range db {
-				for accountName, oldPrivateStatus := range storedAccounts {
+				for accountName, oldPrivateStatus := range storedAccounts.IgAccounts {
+					locale := db[chatId].Locale
 					log.Printf("CRON updating %s", accountName)
 					newPrivateStatus, err := api.GetPrivateStatus(*insta, strings.ToLower(accountName))
 					if err == api.UserNotFoundError { // ошибка "account_not_found"
@@ -61,12 +62,11 @@ func taskStatusUpdater(bot *tgbotapi.BotAPI, insta **goinsta.Instagram, db map[i
 					} else {
 						if newPrivateStatus != oldPrivateStatus { // если статус приватности изменился, то отправляем сообщение
 							msg := tgbotapi.NewMessage(chatId, "")
-							db[chatId][accountName] = newPrivateStatus // записываем в db новый статус
+							db[chatId].IgAccounts[accountName] = newPrivateStatus // записываем в db новый статус
 							if newPrivateStatus {
-
-								msg.Text = fmt.Sprintf(assets.Texts["ru"]["account_is_private"], accountName)
+								msg.Text = fmt.Sprintf(assets.Texts[locale]["account_is_private"], accountName)
 							} else {
-								msg.Text = fmt.Sprintf(assets.Texts["ru"]["account_is_not_private"], accountName)
+								msg.Text = fmt.Sprintf(assets.Texts[locale]["account_is_not_private"], accountName)
 							}
 							log.Printf("CRON %s status updated", accountName)
 							msg.ParseMode = "HTML"
@@ -157,7 +157,8 @@ func main() {
 			if update.Message == nil { // игнорируем все кроме сообщений
 				continue
 			}
-			msg := tgbotapi.NewMessage(update.Message.Chat.ID, assets.Texts["ru"]["panic"])
+			locale := db[update.Message.Chat.ID].Locale
+			msg := tgbotapi.NewMessage(update.Message.Chat.ID, assets.Texts[locale]["panic"])
 			bot.Send(msg)
 			continue
 		}
@@ -168,7 +169,7 @@ func main() {
 		} else if update.Message == nil { // игнорируем все кроме сообщений
 			continue
 		} else if update.Message.Command() != "" { // обработка сообщений
-			handlers.CommandHandler(bot, update, db)
+			handlers.CommandHandler(bot, update, db, config)
 			continue
 		} else { // добавляем новый аккаунт
 			handlers.MessageHandler(workingPath, bot, update, db, config, insta)
