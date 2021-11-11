@@ -152,10 +152,7 @@ func main() {
 
 	//-----------------------------------HANDLING UPDATES-----------------------------------//
 	for update := range updates {
-		if _, ok := db[update.Message.Chat.ID]; !ok {
-			db[update.Message.Chat.ID] = &models.Account{"en", make(map[string]bool)}
-		}
-		
+
 		// если инста ноль
 		if insta == nil {
 			if update.Message == nil { // игнорируем все кроме сообщений

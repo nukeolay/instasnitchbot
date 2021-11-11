@@ -41,6 +41,9 @@ func CallBackHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]
 
 func CommandHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]*models.Account, config models.Config) {
 	chatId := update.Message.Chat.ID
+	if _, ok := db[chatId]; !ok {
+		db[chatId] = &models.Account{"en", make(map[string]bool)}
+	}
 	locale := db[chatId].Locale
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
 	switch update.Message.Command() {
@@ -89,6 +92,9 @@ func MessageHandler(workingPath string, bot *tgbotapi.BotAPI, update tgbotapi.Up
 	chatId := update.Message.Chat.ID
 	messageText := update.Message.Text
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
+	if _, ok := db[chatId]; !ok {
+		db[chatId] = &models.Account{"en", make(map[string]bool)}
+	}
 	locale := db[chatId].Locale
 	if update.Message.From.IsBot {
 		msg.Text = assets.Texts[locale]["do_not_work_with_bots"]
