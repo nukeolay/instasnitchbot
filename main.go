@@ -19,7 +19,7 @@ import (
 	"github.com/Davincible/goinsta"
 	"github.com/go-co-op/gocron"
 
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 func taskStatusUpdater(bot *tgbotapi.BotAPI, insta **goinsta.Instagram, db map[int64]*models.Account, igAccounts map[string]string, config models.Config, loginCountdown *int, isTaskFinished *bool) {
@@ -135,7 +135,7 @@ func main() {
 	if !config.UseWebhook {
 		u := tgbotapi.NewUpdate(0)
 		u.Timeout = 60
-		updates, _ = bot.GetUpdatesChan(u)
+		updates = bot.GetUpdatesChan(u)
 	}
 	db := utils.LoadDb(config)
 
@@ -152,6 +152,10 @@ func main() {
 
 	//-----------------------------------HANDLING UPDATES-----------------------------------//
 	for update := range updates {
+		if _, ok := db[update.Message.Chat.ID]; !ok {
+			db[update.Message.Chat.ID] = &models.Account{"en", make(map[string]bool)}
+		}
+		
 		// если инста ноль
 		if insta == nil {
 			if update.Message == nil { // игнорируем все кроме сообщений

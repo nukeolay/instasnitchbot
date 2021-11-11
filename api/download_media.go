@@ -9,7 +9,7 @@ import (
 	"time"
 
 	"github.com/Davincible/goinsta"
-	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api"
+	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
 
 func getCharNumber(inputChar string) int64 {
@@ -39,7 +39,9 @@ func downloadPhoto(item goinsta.Item, workingDirectory string, bot *tgbotapi.Bot
 			msg := tgbotapi.NewMessage(chatID, assets.Texts[locale]["media_download_error"])
 			bot.Send(msg)
 		} else {
-			photoToSend := tgbotapi.NewDocumentUpload(chatID, fullpath)
+			//photoToSend := tgbotapi.NewDocumentUpload(chatID, fullpath)
+			//tgbotapi.RequestFileData
+			photoToSend := tgbotapi.NewPhoto(chatID, tgbotapi.FilePath(fullpath))
 			bot.Send(photoToSend)
 			errRemove := os.Remove(fullpath)
 			if errRemove != nil {
