@@ -11,7 +11,7 @@ import (
 	"runtime"
 
 	"log"
-	"net/http"
+	//"net/http"
 	"os"
 	"strings"
 	"time"
@@ -89,18 +89,12 @@ func main() {
 	loginCountdown := 0
 	isTaskFinished := true
 	config := utils.GetConfig()
-	port := config.Port
-	if config.Port == "" {
-		port = os.Getenv("PORT")
-	}
+
 	_, filename, _, ok := runtime.Caller(0)
 	if !ok {
 		panic("No caller information")
 	}
 	workingPath := path.Dir(filename)
-
-	http.HandleFunc("/", handlers.WebHandler)
-	go http.ListenAndServe(":"+port, nil)
 
 	// setting up log
 	f, err := os.OpenFile(config.LogFileName, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0666)
@@ -131,12 +125,15 @@ func main() {
 	bot.Debug = false
 
 	//setting up bot telegram connection
-	updates := bot.ListenForWebhook("/" + bot.Token)
-	if !config.UseWebhook {
+	var updates tgbotapi.UpdatesChannel
+	if config.UseWebhook {
+		updates = bot.ListenForWebhook("/" + bot.Token)
+	} else {
 		u := tgbotapi.NewUpdate(0)
 		u.Timeout = 60
 		updates = bot.GetUpdatesChan(u)
 	}
+
 	db := utils.LoadDb(config)
 
 	//setting up cron update account

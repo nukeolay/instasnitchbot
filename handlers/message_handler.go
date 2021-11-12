@@ -18,8 +18,8 @@ func WebHandler(resp http.ResponseWriter, _ *http.Request) {
 	resp.Write([]byte("<html><head><title>InstasnitchBot</title></head><body>Hi there! I'm InstasnitchBot!<br>I can do some shit.<br>You can get me at <a href=\"https://t.me/instasnitchbot\">https://t.me/instasnitchbot</a></body></html>"))
 }
 
-func SendAdmin(chatId int64, bot *tgbotapi.BotAPI, text string) {
-	msg := tgbotapi.NewMessage(chatId, text)
+func SendAdmin(adminChatId int64, bot *tgbotapi.BotAPI, text string) {
+	msg := tgbotapi.NewMessage(adminChatId, text)
 	msg.ParseMode = "HTML"
 	bot.Send(msg)
 }
@@ -43,6 +43,7 @@ func CommandHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]*
 	chatId := update.Message.Chat.ID
 	if _, ok := db[chatId]; !ok {
 		db[chatId] = &models.Account{"en", make(map[string]bool)}
+		SendAdmin(config.AdminChatId, bot, "🤖 I got new user")
 	}
 	locale := db[chatId].Locale
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
@@ -71,7 +72,7 @@ func CommandHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]*
 			log.Printf("COMMAND UNKNOWN %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
 			msg.Text = assets.Texts[locale]["unknown_command"]
 		}
-		
+
 	case "SendBroadcast":
 		if chatId == config.AdminChatId {
 			//TODO цикл в котором перебирать всех пользователей и отправлять сообщения (возможно асинхронно, через go)
@@ -185,7 +186,8 @@ func MessageHandler(workingPath string, bot *tgbotapi.BotAPI, update tgbotapi.Up
 			msg.Text = fmt.Sprintf(assets.Texts[locale]["account_added"], newAccountName)
 			msg.ParseMode = "HTML"
 			utils.SaveDb(db, config)
-			SendAdmin(config.AdminChatId, bot, fmt.Sprintf("<u>%s (%d)</u> added <u>%s</u>", update.Message.From.UserName, update.Message.From.ID, newAccountName))
+			//SendAdmin(config.AdminChatId, bot, fmt.Sprintf("<u>%s (%d)</u> added <u>%s</u>", update.Message.From.UserName, update.Message.From.ID, newAccountName))
+			SendAdmin(config.AdminChatId, bot, fmt.Sprintf("🤖 <u>%s (%d)</u> now tracking for new account", update.Message.From.UserName, update.Message.From.ID))
 			bot.Send(msg)
 		}
 	}
