@@ -168,6 +168,9 @@ func MessageHandler(workingPath string, bot *tgbotapi.BotAPI, update tgbotapi.Up
 		bot.Send(msg)
 	} else {
 		newAccountName := strings.ToLower(messageText)
+		if newAccountName[0:1] == "@" && len(newAccountName) > 1 {
+			newAccountName = utils.TrimFirstChar(newAccountName)
+		}
 		privateStatus, err := api.GetPrivateStatus(insta, newAccountName)
 		if err == api.UserNotFoundError { // ошибка "account_not_found"
 			log.Printf("ADD ERROR account not found %s: %v", newAccountName, err)

@@ -8,6 +8,7 @@ import (
 	"math/rand"
 	"os"
 	"time"
+	"unicode/utf8"
 )
 
 func GetConfig() models.Config {
@@ -46,4 +47,9 @@ func LoadDb(config models.Config) map[int64]*models.Account {
 		log.Println("LOAD DB success")
 	}
 	return db
+}
+
+func TrimFirstChar(s string) string {
+	_, i := utf8.DecodeRuneInString(s)
+	return s[i:]
 }
