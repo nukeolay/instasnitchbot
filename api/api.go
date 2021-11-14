@@ -26,34 +26,13 @@ func getUserFromSearchResult(username string, searchResult *goinsta.SearchResult
 
 func GetPrivateStatus(insta *goinsta.Instagram, username string) (isPrivate bool, err error) {
 	igUser, err := insta.Profiles.ByName(username)
-	// log.Println("/// GetPrivateStatus STARTED")
-	// log.Printf("/// GetPrivateStatus insta.Account.Username: %s", insta.Account.Username)
-	// searchResult, err := insta.Searchbar.SearchUser(username)
-	// log.Println("/// GetPrivateStatus insta.Searchbar.SearchUser finished")
-
-	// if searchResult == nil {
-	// 	log.Printf("searchResult nil, the value is: %v", searchResult)
-	// }
-	// if err != nil {
-	// 	log.Printf("SEARCH USER ERROR: %v", err)
-	// 	CustomChallenge(err, insta)
-	// 	return true, err
-	// } else {
-	// 	igUser, errSearch := getUserFromSearchResult(username, searchResult)
-	// 	if errSearch != nil {
-	// 		return true, errSearch
-	// 	} else {
-	// 		log.Printf("igUser.IsPrivate value is: %v", igUser.IsPrivate)
-	// 		return igUser.IsPrivate, nil
-	// 	}
-	// }
 	if err != nil {
-		log.Printf("GETPRIVATE STATUS ERROR: %v", err)
 		if typedErr, ok := err.(goinsta.ErrorN); ok {
-			//log.Printf("typedErr.Endpoint:%s\ntypedErr.ErrorType:%s\ntypedErr.Message:%s\ntypedErr.Status:%s\ntypedErr.Error:%s\n", typedErr.Endpoint, typedErr.ErrorType, typedErr.Message, typedErr.Status, typedErr.Error())
 			if typedErr.ErrorType == "user_not_found" {
+				log.Printf("GETPRIVATE STATUS ERROR: %s", typedErr.ErrorType)
 				return true, UserNotFoundError
 			} else {
+				log.Printf("GETPRIVATE STATUS ERROR: %v", err)
 				return true, typedErr
 			}
 		} else {

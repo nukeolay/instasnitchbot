@@ -43,7 +43,8 @@ func CommandHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]*
 	chatId := update.Message.Chat.ID
 	if _, ok := db[chatId]; !ok {
 		db[chatId] = &models.Account{"en", make(map[string]bool)}
-		SendAdmin(config.AdminChatId, bot, "🤖 I got new user")
+		SendAdmin(config.AdminChatId, bot, fmt.Sprintf("🤖 I got new user <u>%s (%d)</u>", update.Message.From.UserName, chatId))
+		log.Printf("ADD new user: %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
 	}
 	locale := db[chatId].Locale
 	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
@@ -65,9 +66,33 @@ func CommandHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]*
 		}
 		msg.ReplyMarkup = chooseLocaleKeyboard
 
-	case "AdminGetUserNumber":
+	case "adminGetUserNumber":
 		if chatId == config.AdminChatId {
 			msg.Text = fmt.Sprintf("%d", len(db))
+		} else {
+			log.Printf("COMMAND UNKNOWN %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
+			msg.Text = assets.Texts[locale]["unknown_command"]
+		}
+
+	case "adminGetAll":
+		if chatId == config.AdminChatId {
+			var result string
+			for eachUser, igAccounts := range db {
+				result = result + fmt.Sprintf("%d:", eachUser)
+				if len(igAccounts.IgAccounts) > 0 {
+					for igAccount, isPrivate := range igAccounts.IgAccounts {
+						statusEmoji := "🟢 "
+						if isPrivate {
+							statusEmoji = "🔴 "
+						}
+						result = result + fmt.Sprintf("\n   %s %s", statusEmoji, igAccount)
+					}
+				} else {
+					result = result + " empty"
+				}
+				result = result + "\n"
+			}
+			msg.Text = result
 		} else {
 			log.Printf("COMMAND UNKNOWN %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
 			msg.Text = assets.Texts[locale]["unknown_command"]
@@ -173,7 +198,7 @@ func MessageHandler(workingPath string, bot *tgbotapi.BotAPI, update tgbotapi.Up
 		}
 		privateStatus, err := api.GetPrivateStatus(insta, newAccountName)
 		if err == api.UserNotFoundError { // ошибка "account_not_found"
-			log.Printf("ADD ERROR account not found %s: %v", newAccountName, err)
+			log.Printf("ADD ERROR account not found %s", newAccountName)
 			msg.Text = fmt.Sprintf(assets.Texts[locale]["account_add_error"], assets.Texts[locale]["account_not_found"])
 			bot.Send(msg)
 		} else if _, ok := err.(goinsta.ChallengeError); ok { // TODO разобраться с challenge
@@ -189,8 +214,9 @@ func MessageHandler(workingPath string, bot *tgbotapi.BotAPI, update tgbotapi.Up
 			msg.Text = fmt.Sprintf(assets.Texts[locale]["account_added"], newAccountName)
 			msg.ParseMode = "HTML"
 			utils.SaveDb(db, config)
-			//SendAdmin(config.AdminChatId, bot, fmt.Sprintf("<u>%s (%d)</u> added <u>%s</u>", update.Message.From.UserName, update.Message.From.ID, newAccountName))
-			SendAdmin(config.AdminChatId, bot, fmt.Sprintf("🤖 <u>%s (%d)</u> now tracking for new account", update.Message.From.UserName, update.Message.From.ID))
+			//SendAdmin(config.AdminChatId, bot, fmt.Sprintf("🤖 <u>%s (%d)</u> now tracking for new account", update.Message.From.UserName, update.Message.From.ID))
+			SendAdmin(config.AdminChatId, bot, fmt.Sprintf("🤖 <u>%s (%d)</u> now tracking for <u>%s</u>", update.Message.From.UserName, update.Message.From.ID, newAccountName))
+			log.Printf("ADD user %s (%d) now tracking for %s", update.Message.From.UserName, update.Message.From.ID, newAccountName)
 			bot.Send(msg)
 		}
 	}
