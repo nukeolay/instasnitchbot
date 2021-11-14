@@ -18,8 +18,8 @@ func WebHandler(resp http.ResponseWriter, _ *http.Request) {
 	resp.Write([]byte("<html><head><title>InstasnitchBot</title></head><body>Hi there! I'm InstasnitchBot!<br>I can do some shit.<br>You can get me at <a href=\"https://t.me/instasnitchbot\">https://t.me/instasnitchbot</a></body></html>"))
 }
 
-func SendAdmin(adminChatId int64, bot *tgbotapi.BotAPI, text string) {
-	msg := tgbotapi.NewMessage(adminChatId, text)
+func SendAdmin(chatId int64, bot *tgbotapi.BotAPI, text string) {
+	msg := tgbotapi.NewMessage(chatId, text)
 	msg.ParseMode = "HTML"
 	bot.Send(msg)
 }
@@ -78,19 +78,19 @@ func CommandHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]*
 		if chatId == config.AdminChatId {
 			var result string
 			for eachUser, igAccounts := range db {
-				result = result + fmt.Sprintf("%d:", eachUser)
+				result = result + fmt.Sprintf("👤 %d:", eachUser)
 				if len(igAccounts.IgAccounts) > 0 {
 					for igAccount, isPrivate := range igAccounts.IgAccounts {
 						statusEmoji := "🟢 "
 						if isPrivate {
 							statusEmoji = "🔴 "
 						}
-						result = result + fmt.Sprintf("\n   %s %s", statusEmoji, igAccount)
+						result = result + fmt.Sprintf("\n      %s %s", statusEmoji, igAccount)
 					}
 				} else {
 					result = result + " empty"
 				}
-				result = result + "\n"
+				result = result + "\n\n"
 			}
 			msg.Text = result
 		} else {
@@ -98,10 +98,33 @@ func CommandHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]*
 			msg.Text = assets.Texts[locale]["unknown_command"]
 		}
 
-	case "SendBroadcast":
+	case "sendAllRu":
 		if chatId == config.AdminChatId {
-			//TODO цикл в котором перебирать всех пользователей и отправлять сообщения (возможно асинхронно, через go)
-			//TODO отдельная функция BroadCast(db, message), из doc CommandArguments
+			if len(update.Message.CommandArguments()) > 1 {
+				messageToSendAll := update.Message.CommandArguments()
+				for eachUser, data := range db {
+					if data.Locale == "ru" {
+						SendAdmin(eachUser, bot, messageToSendAll)
+					}
+				}
+				msg.Text = "🤖 Message has been sent to all users (ru)"
+			}
+		} else {
+			log.Printf("COMMAND UNKNOWN %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
+			msg.Text = assets.Texts[locale]["unknown_command"]
+		}
+
+	case "sendAllEn":
+		if chatId == config.AdminChatId {
+			if len(update.Message.CommandArguments()) > 1 {
+				messageToSendAll := update.Message.CommandArguments()
+				for eachUser, data := range db {
+					if data.Locale == "en" {
+						SendAdmin(eachUser, bot, messageToSendAll)
+					}
+				}
+				msg.Text = "🤖 Message has been sent to all users (en)"
+			}
 		} else {
 			log.Printf("COMMAND UNKNOWN %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
 			msg.Text = assets.Texts[locale]["unknown_command"]
@@ -187,7 +210,7 @@ func MessageHandler(workingPath string, bot *tgbotapi.BotAPI, update tgbotapi.Up
 		msg.Text = fmt.Sprintf(assets.Texts[locale]["account_add_error"], assets.Texts[locale]["account_not_found"])
 		bot.Send(msg)
 	} else if strings.Contains(messageText, "://") {
-		api.DownloadMedia(messageText, workingPath, insta, bot, chatId, locale)
+		go api.DownloadMedia(messageText, workingPath, insta, bot, chatId, locale)
 	} else if len(db[chatId].IgAccounts) >= config.SnitchLimit {
 		msg.Text = fmt.Sprintf(assets.Texts[locale]["limit_of_accounts"], config.SnitchLimit)
 		bot.Send(msg)

@@ -29,30 +29,38 @@ func shortcodeToInstaID(shortcode string) int64 {
 	return id
 }
 
-func downloadPhoto(item goinsta.Item, workingDirectory string, bot *tgbotapi.BotAPI, chatID int64, locale string) {
-	if item.Videos == nil {
-		fileName := fmt.Sprintf("instasnitch_%d.jpg", time.Now().UnixNano())
-		fullpath := workingDirectory + "/" + fileName
-		errMediaDownload := item.Download(workingDirectory, fileName)
-		if errMediaDownload != nil {
-			log.Printf("MEDIA ERROR download: %v ", errMediaDownload)
-			msg := tgbotapi.NewMessage(chatID, assets.Texts[locale]["media_download_error"])
-			bot.Send(msg)
+func downloadFile(item goinsta.Item, workingDirectory string, bot *tgbotapi.BotAPI, chatID int64, locale string) {
+	var fileName string
+	if item.Videos != nil {
+		fileName = fmt.Sprintf("instasnitch_%d.mp4", time.Now().UnixNano())
+	} else {
+		fileName = fmt.Sprintf("instasnitch_%d.jpg", time.Now().UnixNano())
+	}
+	fullpath := workingDirectory + "/" + fileName
+	errMediaDownload := item.Download(workingDirectory, fileName)
+	if errMediaDownload != nil {
+		log.Printf("MEDIA ERROR download: %v", errMediaDownload)
+		msg := tgbotapi.NewMessage(chatID, assets.Texts[locale]["media_download_error"])
+		bot.Send(msg)
+	} else {
+		if item.Videos != nil {
+			videoToSend := tgbotapi.NewVideo(chatID, tgbotapi.FilePath(fullpath))
+			_, uploadErr := bot.Send(videoToSend)
+			if uploadErr != nil {
+				log.Printf("MEDIA ERROR download: %v", uploadErr)
+				msg := tgbotapi.NewMessage(chatID, assets.Texts[locale]["media_too_large_error"])
+				bot.Send(msg)
+				time.Sleep(time.Duration(120 * 1000000000)) // пауза перед запуском таска
+			}
 		} else {
-			//photoToSend := tgbotapi.NewDocumentUpload(chatID, fullpath)
-			//tgbotapi.RequestFileData
 			photoToSend := tgbotapi.NewPhoto(chatID, tgbotapi.FilePath(fullpath))
 			bot.Send(photoToSend)
-			errRemove := os.Remove(fullpath)
-			if errRemove != nil {
-				log.Printf("MEDIA ERROR can't remove %s: %v ", fullpath, errRemove)
-			}
 		}
-	} else {
-		msg := tgbotapi.NewMessage(chatID, assets.Texts[locale]["media_not_a_photo"])
-		bot.Send(msg)
+		errRemove := os.Remove(fullpath)
+		if errRemove != nil {
+			log.Printf("MEDIA ERROR can't remove %s: %v ", fullpath, errRemove)
+		}
 	}
-
 }
 
 func DownloadMedia(mediaUrl string, workingDirectory string, insta *goinsta.Instagram, bot *tgbotapi.BotAPI, chatID int64, locale string) {
@@ -74,10 +82,10 @@ func DownloadMedia(mediaUrl string, workingDirectory string, insta *goinsta.Inst
 	for _, item := range media.Items {
 		if item.CarouselMedia != nil {
 			for _, carItem := range item.CarouselMedia {
-				downloadPhoto(carItem, workingDirectory, bot, chatID, locale)
+				downloadFile(carItem, workingDirectory, bot, chatID, locale)
 			}
 		} else {
-			downloadPhoto(item, workingDirectory, bot, chatID, locale)
+			downloadFile(item, workingDirectory, bot, chatID, locale)
 		}
 	}
 }

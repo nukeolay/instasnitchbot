@@ -3,7 +3,7 @@ package assets
 var Texts = map[string]map[string]string{
 	"ru": {
 		"choose_language":           "Выберите язык:",
-		"instructions":              "На связи <b><u>Instasnitch</u></b> 🤖\n\n<b><u>Я умею:</u></b>\n\n✅ наблюдать 👀 за закрытыми аккаунтами в Instagram и уведомлять тебя, когда они становятся открытыми.\n\n✅ сохранять и присылать фотографии из постов в Instagram.\n\n<b><u>Почему это работает:</u></b>\n\nВсе владельцы закрытых аккаунтов рано или поздно открывают их на непродолжительное время, например, для участия в “гивах”. Я помогу тебе не упустить этот момент. Всё происходит анонимно: мне не нужен ни твой профиль Instagram, ни доступ к нему.\n\n<b><u>Как это работает:</u></b>\n\n🔴 Чтобы я начал наблюдать за аккаунтом, напиши мне его имя.\n\n🔴 Чтобы я прислал тебе фотографии из поста, просто отправь мне ссылку на этот пост.",
+		"instructions":              "На связи <b><u>Instasnitch</u></b> 🤖\n\n<b><u>Я умею:</u></b>\n\n✅ наблюдать 👀 за закрытыми аккаунтами в Instagram и уведомлять тебя, когда они становятся открытыми.\n\n✅ сохранять и присылать изображения и видео из постов в Instagram и reels.\n\n<b><u>Почему это работает:</u></b>\n\nВсе владельцы закрытых аккаунтов рано или поздно открывают их на непродолжительное время, например, для участия в “гивах”. Я помогу тебе не упустить этот момент. Всё происходит анонимно: мне не нужен ни твой профиль Instagram, ни доступ к нему.\n\n<b><u>Как это работает:</u></b>\n\n🔴 Чтобы я начал наблюдать за аккаунтом, напиши мне его имя.\n\n🔴 Чтобы я прислал тебе изображение или видео из поста или reels, просто отправь мне ссылку на него.",
 		"endpoint_error":            "сервер перегружен, нужно попробовать позже",
 		"account_deleted":           "🙈 перестал наблюдать за <u>%s</u>",
 		"account_choose_to_delete":  "🗑️ выберите аккаунт, за которым больше не требуется наблюдение",
@@ -19,6 +19,7 @@ var Texts = map[string]map[string]string{
 		"do_not_work_with_bots":     "⛔ я с ботами не работаю",
 		"media_not_a_photo":         "⛔ ой, это было видео, я их не загружаю",
 		"media_download_error":      "⛔ что-то пошло не так (убедись, что это ссылка на пост и он размещен в открытом аккаунте)",
+		"media_too_large_error":     "⛔ файл большой, а я маленький, не получилось его загрузить, извини",
 		"panic":                     "💩 я сломался, попробуй написать мне позже",
 		"button_accounts":           "👥 Показать список аккаунтов",
 		"button_delete":             "🗑️ Перестать следить за аккаунтом",
@@ -26,7 +27,7 @@ var Texts = map[string]map[string]string{
 	},
 	"en": {
 		"choose_language":           "Choose your language:",
-		"instructions":              "Sup! I`m <b><u>Instasnitch</u></b> 🤖\n\n<b><u>I can:</u></b>\n\n✅ track 👀 for private Instagram accounts and inform you when they become public.\n\n✅ save and send you pics from any Instagram post.\n\n<b><u>Why it works:</u></b>\n\nAll private Instagram account owners sooner or later makes them public for a short time occasionally. I help you not to miss this moment. Everything happens anonymously: I don't need your Instagram account or access to it.\n\n<b><u>How it works:</u></b>\n\n🔴 To start track private account, just send me its name.\n\n🔴 To get photos from Instagram post, just send me the link to this post.",
+		"instructions":              "Sup! I`m <b><u>Instasnitch</u></b> 🤖\n\n<b><u>I can:</u></b>\n\n✅ track 👀 for private Instagram accounts and inform you when they become public.\n\n✅ save and send you images and videos from Instagram posts and reels.\n\n<b><u>Why it works:</u></b>\n\nAll private Instagram account owners sooner or later makes them public for a short time occasionally. I help you not to miss this moment. Everything happens anonymously: I don't need your Instagram account or access to it.\n\n<b><u>How it works:</u></b>\n\n🔴 To start track private account, just send me its name.\n\n🔴 To get images or videos from Instagram post or reel, just send me the link to this post (reel).",
 		"endpoint_error":            "sorry, the server is busy, please try again later",
 		"account_deleted":           "🙈 I`m not tracking for <u>%s</u> anymore",
 		"account_choose_to_delete":  "🗑️ choose the account you no longer want to track",
@@ -42,6 +43,7 @@ var Texts = map[string]map[string]string{
 		"do_not_work_with_bots":     "⛔ I don't work with bots",
 		"media_not_a_photo":         "⛔ oops, it was a video, I don't download videos",
 		"media_download_error":      "⛔ something went wrong (make sure it is a link to the Instagram post and it is posted on a public account)",
+		"media_too_large_error":     "⛔ this file is too big, and I am too small, I can't download it, sorry",
 		"panic":                     "💩 I'm not feeling well, please try again later",
 		"button_accounts":           "👥 Show accounts",
 		"button_delete":             "🗑️ Stop tracking account",
