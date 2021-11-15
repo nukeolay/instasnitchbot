@@ -73,12 +73,12 @@ func DownloadMedia(mediaUrl string, workingDirectory string, insta *goinsta.Inst
 		media, errGetMedia = insta.GetMedia(shortcodeToInstaID(shortCode))
 	}
 	if errGetMedia != nil {
-		log.Printf("MEDIA ERROR: %v ", errGetMedia)
+		log.Printf("MEDIA ERROR can't get insta.GetMedia for url: %s: %s", mediaUrl, errGetMedia.Error()[0:10])
 		msg := tgbotapi.NewMessage(chatID, assets.Texts[locale]["media_download_error"])
 		bot.Send(msg)
 		return
 	}
-	log.Printf("MEDIA get success: %s ", shortCode)
+	log.Printf("MEDIA get success: %s ", mediaUrl)
 	for _, item := range media.Items {
 		if item.CarouselMedia != nil {
 			for _, carItem := range item.CarouselMedia {

@@ -29,10 +29,10 @@ func GetPrivateStatus(insta *goinsta.Instagram, username string) (isPrivate bool
 	if err != nil {
 		if typedErr, ok := err.(goinsta.ErrorN); ok {
 			if typedErr.ErrorType == "user_not_found" {
-				log.Printf("GETPRIVATE STATUS ERROR: %s", typedErr.ErrorType)
+				log.Printf("GETPRIVATE STATUS ERROR for user %s: %s", username, typedErr.ErrorType)
 				return true, UserNotFoundError
 			} else {
-				log.Printf("GETPRIVATE STATUS ERROR: %v", err)
+				log.Printf("GETPRIVATE STATUS ERROR for user %s: %s", username, err.Error()[0:10])
 				return true, typedErr
 			}
 		} else {

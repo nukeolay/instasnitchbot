@@ -7,135 +7,11 @@ import (
 	"instasnitchbot/models"
 	"instasnitchbot/utils"
 	"log"
-	"net/http"
 	"strings"
 
 	"github.com/Davincible/goinsta"
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
-
-func WebHandler(resp http.ResponseWriter, _ *http.Request) {
-	resp.Write([]byte("<html><head><title>InstasnitchBot</title></head><body>Hi there! I'm InstasnitchBot!<br>I can do some shit.<br>You can get me at <a href=\"https://t.me/instasnitchbot\">https://t.me/instasnitchbot</a></body></html>"))
-}
-
-func SendAdmin(chatId int64, bot *tgbotapi.BotAPI, text string) {
-	msg := tgbotapi.NewMessage(chatId, text)
-	msg.ParseMode = "HTML"
-	bot.Send(msg)
-}
-
-func CallBackHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]*models.Account, config models.Config) {
-	bot.Send(tgbotapi.NewCallback(update.CallbackQuery.ID, update.CallbackQuery.Data))
-	var chatId int64 = update.CallbackQuery.Message.Chat.ID
-	locale := db[chatId].Locale
-	delete(db[chatId].IgAccounts, update.CallbackQuery.Data)
-	msg := tgbotapi.NewMessage(update.CallbackQuery.Message.Chat.ID, fmt.Sprintf(assets.Texts[locale]["account_deleted"], update.CallbackQuery.Data))
-	msg.ParseMode = "HTML"
-	utils.SaveDb(db, config)
-	bot.Send(msg)
-	if len(db[chatId].IgAccounts) == 0 {
-		msg.Text = assets.Texts[locale]["account_list_is_empty_now"]
-		bot.Send(msg)
-	}
-}
-
-func CommandHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]*models.Account, config models.Config) {
-	chatId := update.Message.Chat.ID
-	if _, ok := db[chatId]; !ok {
-		db[chatId] = &models.Account{"en", make(map[string]bool)}
-		SendAdmin(config.AdminChatId, bot, fmt.Sprintf("🤖 I got new user <u>%s (%d)</u>", update.Message.From.UserName, chatId))
-		log.Printf("ADD new user: %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
-	}
-	locale := db[chatId].Locale
-	msg := tgbotapi.NewMessage(update.Message.Chat.ID, "")
-	switch update.Message.Command() {
-	case "start":
-		var chooseLocaleKeyboard = tgbotapi.NewReplyKeyboard(
-			tgbotapi.NewKeyboardButtonRow(
-				tgbotapi.NewKeyboardButton("🌎 English"),
-			),
-			tgbotapi.NewKeyboardButtonRow(
-				tgbotapi.NewKeyboardButton("🇷🇺 Русский"),
-			),
-		)
-		// выбираем язык для первого сообщения на основании локали пользователя
-		if update.Message.From.LanguageCode == "ru" {
-			msg.Text = assets.Texts["ru"]["choose_language"]
-		} else {
-			msg.Text = assets.Texts["en"]["choose_language"]
-		}
-		msg.ReplyMarkup = chooseLocaleKeyboard
-
-	case "adminGetUserNumber":
-		if chatId == config.AdminChatId {
-			msg.Text = fmt.Sprintf("%d", len(db))
-		} else {
-			log.Printf("COMMAND UNKNOWN %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
-			msg.Text = assets.Texts[locale]["unknown_command"]
-		}
-
-	case "adminGetAll":
-		if chatId == config.AdminChatId {
-			var result string
-			for eachUser, igAccounts := range db {
-				result = result + fmt.Sprintf("👤 %d:", eachUser)
-				if len(igAccounts.IgAccounts) > 0 {
-					for igAccount, isPrivate := range igAccounts.IgAccounts {
-						statusEmoji := "🟢 "
-						if isPrivate {
-							statusEmoji = "🔴 "
-						}
-						result = result + fmt.Sprintf("\n      %s %s", statusEmoji, igAccount)
-					}
-				} else {
-					result = result + " empty"
-				}
-				result = result + "\n\n"
-			}
-			msg.Text = result
-		} else {
-			log.Printf("COMMAND UNKNOWN %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
-			msg.Text = assets.Texts[locale]["unknown_command"]
-		}
-
-	case "sendAllRu":
-		if chatId == config.AdminChatId {
-			if len(update.Message.CommandArguments()) > 1 {
-				messageToSendAll := update.Message.CommandArguments()
-				for eachUser, data := range db {
-					if data.Locale == "ru" {
-						SendAdmin(eachUser, bot, messageToSendAll)
-					}
-				}
-				msg.Text = "🤖 Message has been sent to all users (ru)"
-			}
-		} else {
-			log.Printf("COMMAND UNKNOWN %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
-			msg.Text = assets.Texts[locale]["unknown_command"]
-		}
-
-	case "sendAllEn":
-		if chatId == config.AdminChatId {
-			if len(update.Message.CommandArguments()) > 1 {
-				messageToSendAll := update.Message.CommandArguments()
-				for eachUser, data := range db {
-					if data.Locale == "en" {
-						SendAdmin(eachUser, bot, messageToSendAll)
-					}
-				}
-				msg.Text = "🤖 Message has been sent to all users (en)"
-			}
-		} else {
-			log.Printf("COMMAND UNKNOWN %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
-			msg.Text = assets.Texts[locale]["unknown_command"]
-		}
-
-	default:
-		log.Printf("COMMAND UNKNOWN %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
-		msg.Text = assets.Texts[locale]["unknown_command"]
-	}
-	bot.Send(msg)
-}
 
 func MessageHandler(workingPath string, bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]*models.Account, config models.Config, insta *goinsta.Instagram) {
 	chatId := update.Message.Chat.ID
@@ -226,15 +102,20 @@ func MessageHandler(workingPath string, bot *tgbotapi.BotAPI, update tgbotapi.Up
 			bot.Send(msg)
 		} else if _, ok := err.(goinsta.ChallengeError); ok { // TODO разобраться с challenge
 			log.Printf("ADD ERROR challenge: %v", err)
+			SendAdmin(config.AdminChatId, bot, fmt.Sprintf("ADD ERROR challenge: %v", err))
 			msg.Text = assets.Texts[locale]["panic"]
 			bot.Send(msg)
 		} else if err != nil { // какая-то другая ошибка
-			log.Printf("ADD ERROR %s: %v", newAccountName, err)
+			log.Printf("ADD ERROR %s: %v", newAccountName, err.Error()[0:10])
 			msg.Text = fmt.Sprintf(assets.Texts[locale]["account_add_error"], assets.Texts[locale]["account_not_found"])
 			bot.Send(msg)
 		} else {
 			db[chatId].IgAccounts[newAccountName] = privateStatus
-			msg.Text = fmt.Sprintf(assets.Texts[locale]["account_added"], newAccountName)
+			if privateStatus {
+				msg.Text = fmt.Sprintf(assets.Texts[locale]["account_added"], newAccountName)
+			} else {
+				msg.Text = fmt.Sprintf(assets.Texts[locale]["account_added_not_private"], newAccountName)
+			}
 			msg.ParseMode = "HTML"
 			utils.SaveDb(db, config)
 			//SendAdmin(config.AdminChatId, bot, fmt.Sprintf("🤖 <u>%s (%d)</u> now tracking for new account", update.Message.From.UserName, update.Message.From.ID))
