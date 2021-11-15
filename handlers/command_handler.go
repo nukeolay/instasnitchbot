@@ -2,9 +2,11 @@ package handlers
 
 import (
 	"fmt"
-	"log"
 	"instasnitchbot/assets"
 	"instasnitchbot/models"
+	"log"
+	"strconv"
+	"strings"
 
 	tgbotapi "github.com/go-telegram-bot-api/telegram-bot-api/v5"
 )
@@ -109,6 +111,24 @@ func CommandHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]*
 					}
 				}
 				msg.Text = "🤖 Message has been sent to all users (en)"
+			}
+		} else {
+			log.Printf("COMMAND UNKNOWN %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
+			msg.Text = assets.Texts[locale]["unknown_command"]
+		}
+
+	case "sendTo":
+		// use to send message from bot to user by chatId, split chatId and message with "|"
+		if chatId == config.AdminChatId {
+			if len(update.Message.CommandArguments()) > 1 {
+				arguments := strings.Split(update.Message.CommandArguments(), "|")
+				id, err := strconv.ParseInt(arguments[0], 10, 64)
+				if err == nil {
+					SendAdmin(id, bot, arguments[1])
+					msg.Text = fmt.Sprintf("🤖 Message has been sent to %d", id)
+				} else {
+					msg.Text = fmt.Sprintf("🤖 Message has NOT been sent to %d, error: %v", id, err)
+				}
 			}
 		} else {
 			log.Printf("COMMAND UNKNOWN %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
