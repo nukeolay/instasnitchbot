@@ -25,7 +25,7 @@ func GetConfig() models.Config {
 func GetRandomUpdateNextAccount(defaultPeriod int) int {
 	rand.Seed(time.Now().UnixNano())
 	min := 0
-	max := 30
+	max := 60
 	return defaultPeriod + rand.Intn(max-min+1) + min
 }
 
