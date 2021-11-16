@@ -135,6 +135,10 @@ func CommandHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]*
 			msg.Text = assets.Texts[locale]["unknown_command"]
 		}
 
+	case "help":
+		msg.ParseMode = "HTML"
+		msg.Text = assets.Texts[locale]["instructions"]
+
 	default:
 		log.Printf("COMMAND UNKNOWN %s (ID %d)", update.Message.From.UserName, update.Message.From.ID)
 		msg.Text = assets.Texts[locale]["unknown_command"]
