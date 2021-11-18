@@ -6,6 +6,7 @@ import (
 	"log"
 	"os"
 	"path"
+	"strings"
 	"time"
 
 	"github.com/Davincible/goinsta"
@@ -64,14 +65,19 @@ func downloadFile(item goinsta.Item, workingDirectory string, bot *tgbotapi.BotA
 }
 
 func DownloadMedia(mediaUrl string, workingDirectory string, insta *goinsta.Instagram, bot *tgbotapi.BotAPI, chatID int64, locale string) {
-	shortCode := path.Base(path.Dir(mediaUrl))
+	var shortCode string
 	var media *goinsta.FeedMedia
 	var errGetMedia error
-	if len(shortCode) > 12 { //TODO в url сторис media id размещен не там, где у постаб а без "/"
+
+	if strings.Contains(mediaUrl, "stories") { //TODO проверить сторис
+		shortCode = path.Base(mediaUrl)
+		shortCode = strings.Split(shortCode, "?")[0]
 		media, errGetMedia = insta.GetMedia(shortCode)
 	} else {
+		shortCode = path.Base(path.Dir(mediaUrl))
 		media, errGetMedia = insta.GetMedia(shortcodeToInstaID(shortCode))
 	}
+
 	if errGetMedia != nil {
 		log.Printf("MEDIA ERROR can't get insta.GetMedia for url: %s: %s", mediaUrl, errGetMedia.Error()[0:10])
 		msg := tgbotapi.NewMessage(chatID, assets.Texts[locale]["media_download_error"])
