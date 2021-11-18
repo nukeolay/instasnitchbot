@@ -69,7 +69,7 @@ func DownloadMedia(mediaUrl string, workingDirectory string, insta *goinsta.Inst
 	var media *goinsta.FeedMedia
 	var errGetMedia error
 
-	if strings.Contains(mediaUrl, "stories") { //TODO проверить сторис
+	if strings.Contains(mediaUrl, "stories") {
 		shortCode = path.Base(mediaUrl)
 		shortCode = strings.Split(shortCode, "?")[0]
 		media, errGetMedia = insta.GetMedia(shortCode)
