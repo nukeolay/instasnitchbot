@@ -1,4 +1,5 @@
 InstasnitchBot
+
 *USE IT AT YOUR OWN RISK*
 
 Here are some steps you have to do before running bot for the first time
