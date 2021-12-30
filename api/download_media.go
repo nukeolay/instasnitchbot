@@ -94,4 +94,7 @@ func DownloadMedia(mediaUrl string, workingDirectory string, insta *goinsta.Inst
 			downloadFile(item, workingDirectory, bot, chatID, locale)
 		}
 	}
+	caption := media.Items[0].Caption.Text
+	msgCaption := tgbotapi.NewMessage(chatID, caption)
+	bot.Send(msgCaption)
 }
