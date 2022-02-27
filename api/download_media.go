@@ -35,10 +35,17 @@ func downloadFile(item goinsta.Item, workingDirectory string, bot *tgbotapi.BotA
 	if item.Videos != nil {
 		fileName = fmt.Sprintf("instasnitch_%d.mp4", time.Now().UnixNano())
 	} else {
-		fileName = fmt.Sprintf("instasnitch_%d.jpg", time.Now().UnixNano())
+		var tempImageUrl string = item.Images.GetBest()
+		var imageExtension string
+		if strings.Contains(tempImageUrl, "webp") {
+			imageExtension = "webp"
+		} else {
+			imageExtension = "jpg"
+		}
+		fileName = fmt.Sprintf("instasnitch_%d.%s", time.Now().UnixNano(), imageExtension)
 	}
 	fullpath := workingDirectory + "/" + fileName
-	errMediaDownload := item.Download(workingDirectory, fileName)
+	errMediaDownload := item.DownloadTo(fullpath)
 	if errMediaDownload != nil {
 		log.Printf("MEDIA ERROR download: %v", errMediaDownload)
 		msg := tgbotapi.NewMessage(chatID, assets.Texts[locale]["media_download_error"])
