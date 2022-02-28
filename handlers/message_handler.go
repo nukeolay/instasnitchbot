@@ -92,6 +92,9 @@ func MessageHandler(workingPath string, bot *tgbotapi.BotAPI, update tgbotapi.Up
 		bot.Send(msg)
 	} else {
 		newAccountName := strings.ToLower(messageText)
+		if len(newAccountName) == 0 {
+			return
+		}
 		if newAccountName[0:1] == "@" && len(newAccountName) > 1 {
 			newAccountName = utils.TrimFirstChar(newAccountName)
 		}
@@ -118,7 +121,6 @@ func MessageHandler(workingPath string, bot *tgbotapi.BotAPI, update tgbotapi.Up
 			}
 			msg.ParseMode = "HTML"
 			utils.SaveDb(db, config)
-			//SendAdmin(config.AdminChatId, bot, fmt.Sprintf("🤖 <u>%s (%d)</u> now tracking for new account", update.Message.From.UserName, update.Message.From.ID))
 			SendAdmin(config.AdminChatId, bot, fmt.Sprintf("🤖 <u>%s (%d)</u> now tracking for <u>%s</u>", update.Message.From.UserName, update.Message.From.ID, newAccountName))
 			log.Printf("ADD user %s (%d) now tracking for %s", update.Message.From.UserName, update.Message.From.ID, newAccountName)
 			bot.Send(msg)
