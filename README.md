@@ -8,7 +8,7 @@ Here are some steps you have to do before running bot for the first time
     }
     - enter your instagram account credentials
     - your password is only required to get access to Instagram API and not send to anyone
-    - it is recommended to create new instagram account to use woth this bot
+    - it is recommended to create new instagram account to use with this bot
     - creator of this bot is not responsible for any problems that can occure when youre using this bot
 
 2. In bot folder create ".config" file with following structure (or edit if it exists)
@@ -26,7 +26,7 @@ Here are some steps you have to do before running bot for the first time
    }
 
     To get AdminChatId (actually your ChatId) you should do followong steps when first time starting bot:
-   - start "instasnitchbot.exe
+   - compile and run bot
    - send in Telegram "/start" command to your bot
    - wait for 1 minute
    - close running "instasnitchbot.exe"
