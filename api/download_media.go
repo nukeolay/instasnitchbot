@@ -58,7 +58,7 @@ func downloadFile(item goinsta.Item, workingDirectory string, bot *tgbotapi.BotA
 				log.Printf("MEDIA ERROR download: %v", uploadErr)
 				msg := tgbotapi.NewMessage(chatID, assets.Texts[locale]["media_too_large_error"])
 				bot.Send(msg)
-				time.Sleep(time.Duration(120 * 1000000000)) // пауза перед запуском таска
+				time.Sleep(time.Duration(120 * 1000000000)) // pause before next task
 			}
 		} else {
 			photoToSend := tgbotapi.NewPhoto(chatID, tgbotapi.FilePath(fullpath))

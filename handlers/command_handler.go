@@ -30,7 +30,7 @@ func CommandHandler(bot *tgbotapi.BotAPI, update tgbotapi.Update, db map[int64]*
 				tgbotapi.NewKeyboardButton("🇷🇺 Русский"),
 			),
 		)
-		// выбираем язык для первого сообщения на основании локали пользователя
+		// choose language for the first message using user's locale
 		if update.Message.From.LanguageCode == "ru" {
 			msg.Text = assets.Texts["ru"]["choose_language"]
 		} else {

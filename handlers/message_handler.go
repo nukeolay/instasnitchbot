@@ -99,16 +99,16 @@ func MessageHandler(workingPath string, bot *tgbotapi.BotAPI, update tgbotapi.Up
 			newAccountName = utils.TrimFirstChar(newAccountName)
 		}
 		privateStatus, err := api.GetPrivateStatus(insta, newAccountName)
-		if err == api.UserNotFoundError { // ошибка "account_not_found"
+		if err == api.UserNotFoundError { // error "account_not_found"
 			log.Printf("ADD ERROR account not found %s", newAccountName)
 			msg.Text = fmt.Sprintf(assets.Texts[locale]["account_add_error"], assets.Texts[locale]["account_not_found"])
 			bot.Send(msg)
-		} else if _, ok := err.(goinsta.ChallengeError); ok { // TODO разобраться с challenge
+		} else if _, ok := err.(goinsta.ChallengeError); ok { // TODO make challenge handler
 			log.Printf("ADD ERROR challenge: %v", err)
 			SendAdmin(config.AdminChatId, bot, fmt.Sprintf("ADD ERROR challenge: %v", err))
 			msg.Text = assets.Texts[locale]["panic"]
 			bot.Send(msg)
-		} else if err != nil { // какая-то другая ошибка
+		} else if err != nil { // any other error
 			log.Printf("ADD ERROR %s: %v", newAccountName, err.Error()[0:10])
 			msg.Text = fmt.Sprintf(assets.Texts[locale]["account_add_error"], assets.Texts[locale]["account_not_found"])
 			bot.Send(msg)

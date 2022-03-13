@@ -57,12 +57,12 @@ func LoadLogins() (igAccounts map[string]string) {
 
 func GetSavedApi(igAccounts map[string]string) *goinsta.Instagram {
 	insta, errLoad := goinsta.Import(".goinsta")
-	if errLoad != nil { // если ошибка импорта
+	if errLoad != nil { // impoort error
 		log.Printf("INSTA ERROR import: %v", errLoad)
-		return insta // возвращаю или ноль, или залогиненный
+		return insta // return nil or logged in user
 	}
 	log.Print("INSTA import success")
-	return insta // возвращаю залогиненный по импорту
+	return insta // return imported logged in user
 }
 
 func GetNewApi(igAccounts map[string]string) *goinsta.Instagram {
@@ -87,12 +87,6 @@ func InstaLogin(igAccounts map[string]string) *goinsta.Instagram {
 	var errLogin error
 	for igLogin, igPassword := range igAccounts {
 		insta = goinsta.New(igLogin, igPassword)
-
-		// insta.SetDevice(goinsta.Device{Manufacturer: "LGE/lge", Model: "LG-H870DS", CodeName: "lucye", AndroidVersion: 28, AndroidRelease: 9, ScreenDpi: "560dpi", ScreenResolution: "1440x2898", Chipset: "lucye"},
-		// )
-
-		// log.Printf("set new device")
-
 		errLogin = insta.Login()
 		if errLogin != nil {
 			log.Printf("LOGIN ERROR with %s: %v ", igLogin, errLogin)
@@ -104,54 +98,3 @@ func InstaLogin(igAccounts map[string]string) *goinsta.Instagram {
 	log.Println("LOGIN ERROR all attempts fail")
 	return nil
 }
-
-// func CustomChallenge(err error, insta *goinsta.Instagram) {
-// 	switch v := err.(type) {
-// 	case goinsta.ChallengeError:
-// 		fmt.Println("step 1")
-// 		err := insta.Challenge.Process(v.Challenge.APIPath)
-// 		fmt.Println("step 2")
-// 		if err != nil {
-// 			fmt.Println("step 3")
-// 			log.Fatalln(err)
-// 		}
-// 		fmt.Println("step 4")
-
-// 		ui := &input.UI{
-// 			Writer: os.Stdout,
-// 			Reader: os.Stdin,
-// 		}
-// 		fmt.Println("step 6")
-
-// 		query := "What is SMS code for instagram?"
-// 		code, err := ui.Ask(query, &input.Options{
-// 			Default:  "000000",
-// 			Required: true,
-// 			Loop:     true,
-// 		})
-// 		fmt.Println("step 7")
-
-// 		if err != nil {
-// 			fmt.Println("step 8")
-
-// 			log.Fatalln(err)
-// 		}
-// 		fmt.Println("step 9")
-
-// 		err = insta.Challenge.SendSecurityCode(code)
-// 		fmt.Println("step 10")
-
-// 		if err != nil {
-// 			fmt.Println("step 11")
-
-// 			log.Fatalln(err)
-// 		}
-// 		fmt.Println("step 12")
-
-// 		insta.Account = insta.Challenge.LoggedInUser
-// 	default:
-// 		fmt.Println("step 13")
-
-// 		log.Fatalln(err)
-// 	}
-// }

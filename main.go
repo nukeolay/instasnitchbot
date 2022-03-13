@@ -41,9 +41,9 @@ func main() {
 	igAccounts := api.LoadLogins()
 	insta := api.GetSavedApi(igAccounts)
 
-	if insta == nil { // не получилось импортировать
+	if insta == nil { // import error
 		insta = api.GetNewApi(igAccounts)
-		if insta == nil { // не получилось залигиниться
+		if insta == nil { // login error
 			log.Panic("START ERROR insta is nil")
 		}
 	}
@@ -82,9 +82,9 @@ func main() {
 	//-----------------------------------HANDLING UPDATES-----------------------------------//
 	for update := range updates {
 
-		// если инста ноль
+		// if insta is nil
 		if insta == nil {
-			if update.Message == nil { // игнорируем все кроме сообщений
+			if update.Message == nil { // ignore all data except user messages
 				continue
 			}
 			locale := db[update.Message.Chat.ID].Locale
@@ -93,15 +93,15 @@ func main() {
 			continue
 		}
 
-		if update.CallbackQuery != nil { // обработка нажатий на кнопки в телеграме
+		if update.CallbackQuery != nil { // button press handling
 			handlers.CallBackHandler(bot, update, db, config)
 			continue
-		} else if update.Message == nil { // игнорируем все кроме сообщений
+		} else if update.Message == nil { // ignore all data except user messages
 			continue
-		} else if update.Message.Command() != "" { // обработка сообщений
+		} else if update.Message.Command() != "" { // messages handling
 			handlers.CommandHandler(bot, update, db, config)
 			continue
-		} else { // добавляем новый аккаунт
+		} else { // adding new account
 			handlers.MessageHandler(workingPath, bot, update, db, config, insta)
 			continue
 		}
